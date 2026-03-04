@@ -1,0 +1,30 @@
+category_name: "mobility"
+display_name: "혼잡/이동 레이더"
+
+sources:
+  - name: "TechCrunch"
+    type: "rss"
+    url: "https://techcrunch.com/feed/"
+  - name: "The Verge"
+    type: "rss"
+    url: "https://www.theverge.com/rss/index.xml"
+  - name: "CityLab"
+    type: "rss"
+    url: "https://www.bloomberg.com/citylab/feed/index.xml"
+
+entities:
+  - name: "Transit"
+    display_name: "대중교통"
+    keywords: ["transit", "subway", "bus", "지하철", "버스", "대중교통", "metro"]
+  - name: "Congestion"
+    display_name: "혼잡/교통"
+    keywords: ["traffic", "congestion", "교통", "혼잡", "정체", "traffic jam"]
+  - name: "Rideshare"
+    display_name: "공유 이동"
+    keywords: ["uber", "lyft", "taxi", "카카오택시", "타다", "ride-hailing"]
+  - name: "Micromobility"
+    display_name: "마이크로 모빌리티"
+    keywords: ["scooter", "bike-share", "킥보드", "자전거", "e-bike"]
+  - name: "EV"
+    display_name: "전기차"
+    keywords: ["ev", "electric vehicle", "전기차", "tesla", "charging station", "충전소"]
