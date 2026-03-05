@@ -3,12 +3,18 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-from typing import List, Tuple
+from typing import Any, List, Mapping, Tuple, cast
 
 import feedparser
 import requests
 
+from .collectors.citybikes_collector import collect_citybikes
 from .models import Article, Source
+
+_DEFAULT_HEADERS = {
+    "User-Agent": "MobilityRadar/1.0 (+https://github.com/zzragida/ai-frendly-datahub)",
+    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+}
 
 
 def collect_sources(
@@ -38,24 +44,28 @@ def _collect_single(
     limit: int,
     timeout: int,
 ) -> List[Article]:
-    if source.type.lower() != "rss":
-        raise ValueError(f"Unsupported source type '{source.type}'. Only 'rss' is supported in the template.")
+    source_type = source.type.lower()
+    if source_type == "citybikes":
+        return collect_citybikes(source, category=category, limit=limit, timeout=timeout)
+    if source_type != "rss":
+        raise ValueError(f"Unsupported source type '{source.type}'. Supported: 'rss', 'citybikes'.")
 
-    response = requests.get(source.url, timeout=timeout)
+    response = requests.get(source.url, timeout=timeout, headers=_DEFAULT_HEADERS)
     response.raise_for_status()
 
     feed = feedparser.parse(response.content)
     items: List[Article] = []
 
-    for entry in feed.entries[:limit]:
+    for raw_entry in feed.entries[:limit]:
+        entry = cast(Mapping[str, Any], raw_entry)
         published = _extract_datetime(entry)
         summary = entry.get("summary", "") or entry.get("description", "") or ""
 
         items.append(
             Article(
-                title=(entry.get("title") or "").strip() or "(no title)",
-                link=(entry.get("link") or "").strip(),
-                summary=summary.strip(),
+                title=str(entry.get("title") or "").strip() or "(no title)",
+                link=str(entry.get("link") or "").strip(),
+                summary=str(summary).strip(),
                 published=published,
                 source=source.name,
                 category=category,
@@ -65,12 +75,15 @@ def _collect_single(
     return items
 
 
-def _extract_datetime(entry: dict) -> datetime | None:
+def _extract_datetime(entry: Mapping[str, Any]) -> datetime | None:
     """Parse a feed entry date into a timezone-aware datetime."""
-    if entry.get("published_parsed"):
-        return datetime.fromtimestamp(time.mktime(entry.published_parsed), tz=timezone.utc)
-    if entry.get("updated_parsed"):
-        return datetime.fromtimestamp(time.mktime(entry.updated_parsed), tz=timezone.utc)
+    published_parsed = entry.get("published_parsed")
+    if published_parsed:
+        return datetime.fromtimestamp(time.mktime(cast(time.struct_time, published_parsed)), tz=timezone.utc)
+
+    updated_parsed = entry.get("updated_parsed")
+    if updated_parsed:
+        return datetime.fromtimestamp(time.mktime(cast(time.struct_time, updated_parsed)), tz=timezone.utc)
 
     for key in ("published", "updated", "date"):
         raw = entry.get(key)

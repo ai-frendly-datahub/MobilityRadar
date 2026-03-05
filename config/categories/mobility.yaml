@@ -2,53 +2,106 @@ category_name: "mobility"
 display_name: "혼잡/이동 레이더"
 
 sources:
-  # US Transit Agencies
-  - name: "WMATA (Washington DC Metro)"
+  # Public mobility API (high-volume)
+  - name: "CityBikes Networks API"
+    type: "citybikes"
+    url: "https://api.citybik.es/v2/networks"
+    limit: 120
+    focus_cities: ["Seoul", "Tokyo", "New York", "London", "Paris"]
+
+  # EV/mobility domain-specific feeds
+  - name: "Electrek"
     type: "rss"
-    url: "https://www.wmata.com/service/alerts/rss.cfm"
-  - name: "BART (Bay Area Rapid Transit)"
+    url: "https://electrek.co/feed/"
+  - name: "InsideEVs"
     type: "rss"
-    url: "https://www.bart.gov/news/rss"
-  - name: "MARTA (Atlanta Transit)"
+    url: "https://insideevs.com/feed/"
+  - name: "Charged EVs"
     type: "rss"
-    url: "https://www.itsmarta.com/rss-feeds.aspx"
-  - name: "MTA (New York Transit)"
+    url: "https://chargedevs.com/feed/"
+  - name: "The Driven"
     type: "rss"
-    url: "https://new.mta.info/feeds/rss"
-  - name: "USDOT News"
+    url: "https://thedriven.io/feed/"
+  - name: "CleanTechnica Transportation"
     type: "rss"
-    url: "https://www.transportation.gov/rss"
-  # Korean Transit Agencies
-  - name: "Seoul Metro"
+    url: "https://cleantechnica.com/tag/transportation/feed/"
+  - name: "CleanTechnica EV"
     type: "rss"
-    url: "https://www.seoulmetro.co.kr/kr/board.do?menuIdx=32&boardType=rss"
-  - name: "Korail (Korean Railways)"
+    url: "https://cleantechnica.com/tag/ev/feed/"
+  - name: "Teslarati"
     type: "rss"
-    url: "https://www.korail.com/mobile/common/rss.do"
-  - name: "Incheon Metro"
+    url: "https://www.teslarati.com/feed/"
+  - name: "Green Car Reports"
     type: "rss"
-    url: "https://www.incheonmetro.co.kr/board/rss.do"
-  # Traffic & Mobility News
-  - name: "TechCrunch"
+    url: "https://www.greencarreports.com/rss"
+  - name: "Electrive"
     type: "rss"
-    url: "https://techcrunch.com/feed/"
-  - name: "The Verge"
+    url: "https://www.electrive.com/feed/"
+  - name: "Metro Magazine"
     type: "rss"
-    url: "https://www.theverge.com/rss/index.xml"
+    url: "https://www.metro-magazine.com/rss"
 
 entities:
   - name: "Transit"
     display_name: "대중교통"
-    keywords: ["transit", "subway", "bus", "지하철", "버스", "대중교통", "metro"]
+    keywords:
+      [
+        "transit",
+        "public transit",
+        "metro",
+        "subway",
+        "bus",
+        "train",
+        "rail",
+        "mobility service",
+        "지하철",
+        "버스",
+        "대중교통",
+        "철도",
+        "공공교통",
+      ]
   - name: "Congestion"
     display_name: "혼잡/교통"
-    keywords: ["traffic", "congestion", "교통", "혼잡", "정체", "traffic jam"]
+    keywords: ["traffic", "congestion", "traffic jam", "교통", "혼잡", "정체", "gridlock"]
   - name: "Rideshare"
     display_name: "공유 이동"
-    keywords: ["uber", "lyft", "taxi", "카카오택시", "타다", "ride-hailing"]
+    keywords:
+      ["rideshare", "ride share", "ride-hailing", "uber", "lyft", "taxi", "카카오택시", "타다"]
   - name: "Micromobility"
     display_name: "마이크로 모빌리티"
-    keywords: ["scooter", "bike-share", "킥보드", "자전거", "e-bike"]
+    keywords:
+      [
+        "micromobility",
+        "scooter",
+        "e-scooter",
+        "bike share",
+        "bike-share",
+        "bikeshare",
+        "city bike",
+        "shared bike",
+        "자전거",
+        "킥보드",
+        "공공자전거",
+        "e-bike",
+      ]
   - name: "EV"
     display_name: "전기차"
-    keywords: ["ev", "electric vehicle", "전기차", "tesla", "charging station", "충전소"]
+    keywords:
+      [
+        "electric vehicle",
+        "ev",
+        "electric car",
+        "battery",
+        "battery electric",
+        "charging",
+        "charging station",
+        "charger",
+        "fast charging",
+        "tesla",
+        "rivian",
+        "hyundai ioniq",
+        "전기차",
+        "배터리",
+        "충전",
+        "충전소",
+      ]
