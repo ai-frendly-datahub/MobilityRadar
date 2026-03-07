@@ -7,6 +7,12 @@ from typing import Any, List, Mapping, Tuple, cast
 
 import feedparser
 import requests
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from .collectors.citybikes_collector import collect_citybikes
 from .models import Article, Source
@@ -15,6 +21,27 @@ _DEFAULT_HEADERS = {
     "User-Agent": "MobilityRadar/1.0 (+https://github.com/zzragida/ai-frendly-datahub)",
     "Accept": "application/rss+xml, application/xml, text/xml, */*",
 }
+
+
+def _fetch_url_with_retry(
+    url: str,
+    timeout: int,
+    headers: dict[str, str] | None = None,
+) -> requests.Response:
+    """Fetch URL with retry logic on transient errors."""
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(requests.exceptions.RequestException),
+        reraise=True,
+    )
+    def _fetch() -> requests.Response:
+        response = requests.get(url, timeout=timeout, headers=headers)
+        response.raise_for_status()
+        return response
+
+    return _fetch()
 
 
 def collect_sources(
@@ -30,7 +57,9 @@ def collect_sources(
 
     for source in sources:
         try:
-            articles.extend(_collect_single(source, category=category, limit=limit_per_source, timeout=timeout))
+            articles.extend(
+                _collect_single(source, category=category, limit=limit_per_source, timeout=timeout)
+            )
         except Exception as exc:  # noqa: BLE001 - surface errors to the caller
             errors.append(f"{source.name}: {exc}")
 
@@ -50,8 +79,7 @@ def _collect_single(
     if source_type != "rss":
         raise ValueError(f"Unsupported source type '{source.type}'. Supported: 'rss', 'citybikes'.")
 
-    response = requests.get(source.url, timeout=timeout, headers=_DEFAULT_HEADERS)
-    response.raise_for_status()
+    response = _fetch_url_with_retry(source.url, timeout, headers=_DEFAULT_HEADERS)
 
     feed = feedparser.parse(response.content)
     items: List[Article] = []
@@ -79,11 +107,15 @@ def _extract_datetime(entry: Mapping[str, Any]) -> datetime | None:
     """Parse a feed entry date into a timezone-aware datetime."""
     published_parsed = entry.get("published_parsed")
     if published_parsed:
-        return datetime.fromtimestamp(time.mktime(cast(time.struct_time, published_parsed)), tz=timezone.utc)
+        return datetime.fromtimestamp(
+            time.mktime(cast(time.struct_time, published_parsed)), tz=timezone.utc
+        )
 
     updated_parsed = entry.get("updated_parsed")
     if updated_parsed:
-        return datetime.fromtimestamp(time.mktime(cast(time.struct_time, updated_parsed)), tz=timezone.utc)
+        return datetime.fromtimestamp(
+            time.mktime(cast(time.struct_time, updated_parsed)), tz=timezone.utc
+        )
 
     for key in ("published", "updated", "date"):
         raw = entry.get(key)
