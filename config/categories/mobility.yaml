@@ -1,119 +1,28 @@
-category_name: "mobility"
-display_name: "혼잡/이동 레이더"
+# This is a template for a new Radar category.
+# Copy this file to a new file named `[your_category_name].yaml` and fill in the details.
 
+category_name: "my_category"
+display_name: "My Category Radar"
+
+# List of data sources to collect from
+# Supported types: "rss", "html" (html is a placeholder for future extension)
 sources:
-  # Public mobility API (high-volume)
-  - name: "CityBikes Networks API"
-    type: "citybikes"
-    url: "https://api.citybik.es/v2/networks"
-    limit: 120
-    focus_cities: ["Seoul", "Tokyo", "New York", "London", "Paris"]
+  - name: "Example News RSS"
+    type: "rss"
+    url: "https://www.example.com/feed"
+  # - name: "Example Website"
+  #   type: "html"
+  #   url: "https://www.example.com/news"
 
-  # EV/mobility domain-specific feeds
-  - name: "Electrek"
-    type: "rss"
-    url: "https://electrek.co/feed/"
-  - name: "InsideEVs"
-    type: "rss"
-    url: "https://insideevs.com/feed/"
-  - name: "Charged EVs"
-    type: "rss"
-    url: "https://chargedevs.com/feed/"
-  - name: "The Driven"
-    type: "rss"
-    url: "https://thedriven.io/feed/"
-  - name: "Jalopnik"
-    type: "rss"
-    url: "https://jalopnik.com/rss"
-  - name: "Teslarati"
-    type: "rss"
-    url: "https://www.teslarati.com/feed/"
-  - name: "Engadget Transportation"
-    type: "rss"
-    url: "https://www.engadget.com/rss.xml"
-  - name: "Electrive"
-    type: "rss"
-    url: "https://www.electrive.com/feed/"
-  - name: "Metro Magazine"
-    type: "rss"
-    url: "https://www.metro-magazine.com/rss"
-  - name: "CNBC Transportation"
-    type: "rss"
-    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html"
-  - name: "Seeking Alpha EV"
-    type: "rss"
-    url: "https://seekingalpha.com/feed.xml"
-  - name: "TechCrunch Transportation"
-    type: "rss"
-    url: "https://techcrunch.com/category/transportation/feed/"
-  - name: "Car and Driver"
-    type: "rss"
-    url: "https://www.caranddriver.com/rss/all.xml"
-  - name: "Gizmodo"
-    type: "rss"
-    url: "https://gizmodo.com/rss"
-
+# List of entities to extract from the collected items.
+# The analyzer will perform simple keyword matching based on these lists.
 entities:
-  - name: "Transit"
-    display_name: "대중교통"
+  - name: "Topic"
     keywords:
-      [
-        "transit",
-        "public transit",
-        "metro",
-        "subway",
-        "bus",
-        "train",
-        "rail",
-        "mobility service",
-        "지하철",
-        "버스",
-        "대중교통",
-        "철도",
-        "공공교통",
-      ]
-  - name: "Congestion"
-    display_name: "혼잡/교통"
-    keywords: ["traffic", "congestion", "traffic jam", "교통", "혼잡", "정체", "gridlock"]
-  - name: "Rideshare"
-    display_name: "공유 이동"
+      - "keyword1"
+      - "keyword2"
+      - "keyword3"
+  - name: "Brand"
     keywords:
-      ["rideshare", "ride share", "ride-hailing", "uber", "lyft", "taxi", "카카오택시", "타다"]
-  - name: "Micromobility"
-    display_name: "마이크로 모빌리티"
-    keywords:
-      [
-        "micromobility",
-        "scooter",
-        "e-scooter",
-        "bike share",
-        "bike-share",
-        "bikeshare",
-        "city bike",
-        "shared bike",
-        "자전거",
-        "킥보드",
-        "공공자전거",
-        "e-bike",
-      ]
-  - name: "EV"
-    display_name: "전기차"
-    keywords:
-      [
-        "electric vehicle",
-        "ev",
-        "electric car",
-        "battery",
-        "battery electric",
-        "charging",
-        "charging station",
-        "charger",
-        "fast charging",
-        "tesla",
-        "rivian",
-        "hyundai ioniq",
-        "전기차",
-        "배터리",
-        "충전",
-        "충전소",
-      ]
+      - "BrandA"
+      - "BrandB"
