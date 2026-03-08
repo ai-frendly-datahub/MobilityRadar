@@ -1,5 +1,8 @@
 # MobilityRadar - 모빌리티 정보 레이더
 
+**🌐 Live Report**: https://ai-frendly-datahub.github.io/MobilityRadar/
+
+
 CityBikes API와 모빌리티 관련 뉴스를 수집하여 공유 모빌리티 서비스의 가용성과 트렌드를 분석합니다.
 
 ## 프로젝트 목표
