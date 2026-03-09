@@ -62,3 +62,33 @@ def test_report_generation(
     assert "모빌리티" in content
     assert "공유자전거" in content
     assert "전기차" in content
+
+
+@pytest.mark.integration
+def test_report_includes_regional_availability_section(
+    tmp_path: Path,
+    sample_articles: list[Article],
+    sample_config,
+) -> None:
+    output_path = tmp_path / "regional_report.html"
+    stats = {"total_articles": len(sample_articles), "sources": 1}
+    entities_json_rows = [
+        '{"city": ["서울시", "부산"]}',
+        '{"region": ["경기도", "seoul"]}',
+    ]
+
+    result = generate_report(
+        category=sample_config,
+        articles=sample_articles,
+        output_path=output_path,
+        stats=stats,
+        entities_json_rows=entities_json_rows,
+    )
+
+    content = result.read_text(encoding="utf-8")
+    assert "Regional Mobility Availability" in content
+    assert "Korea Mobility Coverage" in content
+    assert "Region (시도)" in content
+    assert "서울특별시" in content
+    assert "부산광역시" in content
+    assert "경기도" in content

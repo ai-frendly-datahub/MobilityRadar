@@ -119,6 +119,9 @@ def run(
         for article in validated_articles:
             search_idx.upsert(article.link, article.title, article.summary)
 
+    recent_entities_json = storage.recent_entities_json(
+        category_cfg.category_name, days=recent_days
+    )
     recent_articles = storage.recent_articles(category_cfg.category_name, days=recent_days)
     storage.close()
 
@@ -139,6 +142,7 @@ def run(
         output_path=output_path,
         stats=stats,
         errors=all_errors,
+        entities_json_rows=recent_entities_json,
     )
     print(f"[Radar] Report generated at {output_path}")
     if all_errors:
