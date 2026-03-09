@@ -120,6 +120,22 @@ class RadarStorage:
             )
         return results
 
+    def recent_entities_json(self, category: str, *, days: int = 7, limit: int = 2000) -> List[str]:
+        since = _utc_naive(datetime.now(timezone.utc) - timedelta(days=days))
+        rows = self.conn.execute(
+            """
+            SELECT entities_json
+            FROM articles
+            WHERE category = ?
+              AND COALESCE(published, collected_at) >= ?
+              AND entities_json IS NOT NULL
+            ORDER BY COALESCE(published, collected_at) DESC
+            LIMIT ?
+            """,
+            [category, since, limit],
+        ).fetchall()
+        return [str(row[0]) for row in rows if row and row[0]]
+
     def delete_older_than(self, days: int) -> int:
         """보존 기간 밖 데이터 삭제."""
         cutoff = _utc_naive(datetime.now(timezone.utc) - timedelta(days=days))
@@ -127,5 +143,7 @@ class RadarStorage:
             "SELECT COUNT(*) FROM articles WHERE COALESCE(published, collected_at) < ?", [cutoff]
         ).fetchone()
         to_delete = count_row[0] if count_row else 0
-        self.conn.execute("DELETE FROM articles WHERE COALESCE(published, collected_at) < ?", [cutoff])
+        self.conn.execute(
+            "DELETE FROM articles WHERE COALESCE(published, collected_at) < ?", [cutoff]
+        )
         return to_delete

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import re
 from collections import Counter
 from collections.abc import Iterable
 from datetime import datetime, timezone
@@ -22,37 +24,55 @@ def generate_report(
     output_path: Path,
     stats: dict[str, int],
     errors: list[str] | None = None,
+    entities_json_rows: Iterable[str] | None = None,
 ) -> Path:
     """Render a simple HTML report for the collected articles."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     articles_list = list(articles)
     entity_counts = _count_entities(articles_list)
-    
+    raw_entity_rows = list(entities_json_rows) if entities_json_rows is not None else []
+    if not raw_entity_rows:
+        raw_entity_rows = [
+            json.dumps(article.matched_entities, ensure_ascii=False)
+            for article in articles_list
+            if article.matched_entities
+        ]
+    regional_counts = _count_sido_mentions(raw_entity_rows)
+    regional_rows = sorted(regional_counts.items(), key=lambda item: (-item[1], item[0]))
+    korea_map_html = _build_korea_choropleth_map_html(regional_counts)
+
     # Convert Article objects to dicts for JSON serialization (for JavaScript charts)
     articles_json = []
     for article in articles_list:
         article_data = {
-            'title': article.title,
-            'link': article.link,
-            'source': article.source,
-            'published': article.published.isoformat() if article.published else None,
-            'published_at': article.published.isoformat() if article.published else None,
-            'summary': article.summary,
-            'matched_entities': article.matched_entities or {}
+            "title": article.title,
+            "link": article.link,
+            "source": article.source,
+            "published": article.published.isoformat() if article.published else None,
+            "published_at": article.published.isoformat() if article.published else None,
+            "summary": article.summary,
+            "matched_entities": article.matched_entities or {},
+            "collected_at": (
+                article.collected_at.isoformat()
+                if hasattr(article, "collected_at") and article.collected_at
+                else None
+            ),
         }
         articles_json.append(article_data)
 
     template = cast(_TemplateRenderer, Template(_REPORT_TEMPLATE))
     rendered = template.render(
-            category=category,
-            articles=articles_list,  # Keep original for template rendering
-            articles_json=articles_json,  # JSON-serializable version for charts
-            generated_at=datetime.now(timezone.utc),
-            stats=stats,
-            entity_counts=entity_counts,
-            errors=errors or [],
-        )
+        category=category,
+        articles=articles_list,  # Keep original for template rendering
+        articles_json=articles_json,  # JSON-serializable version for charts
+        generated_at=datetime.now(timezone.utc),
+        stats=stats,
+        entity_counts=entity_counts,
+        regional_rows=regional_rows,
+        korea_map_html=korea_map_html,
+        errors=errors or [],
+    )
     _ = output_path.write_text(rendered, encoding="utf-8")
     return output_path
 
@@ -63,6 +83,181 @@ def _count_entities(articles: Iterable[Article]) -> Counter[str]:
         for entity_name, keywords in (article.matched_entities or {}).items():
             counter[entity_name] += len(keywords)
     return counter
+
+
+_KOREA_SIDO_GEOJSON_URL = (
+    "https://raw.githubusercontent.com/southkorea/southkorea-maps/master/"
+    "kostat/2013/json/skorea_provinces_geo.json"
+)
+
+_SIDO_ALIASES = {
+    "서울": "서울특별시",
+    "서울시": "서울특별시",
+    "서울특별시": "서울특별시",
+    "seoul": "서울특별시",
+    "부산": "부산광역시",
+    "부산시": "부산광역시",
+    "부산광역시": "부산광역시",
+    "busan": "부산광역시",
+    "대구": "대구광역시",
+    "대구시": "대구광역시",
+    "대구광역시": "대구광역시",
+    "daegu": "대구광역시",
+    "인천": "인천광역시",
+    "인천시": "인천광역시",
+    "인천광역시": "인천광역시",
+    "incheon": "인천광역시",
+    "광주": "광주광역시",
+    "광주시": "광주광역시",
+    "광주광역시": "광주광역시",
+    "gwangju": "광주광역시",
+    "대전": "대전광역시",
+    "대전시": "대전광역시",
+    "대전광역시": "대전광역시",
+    "daejeon": "대전광역시",
+    "울산": "울산광역시",
+    "울산시": "울산광역시",
+    "울산광역시": "울산광역시",
+    "ulsan": "울산광역시",
+    "세종": "세종특별자치시",
+    "세종시": "세종특별자치시",
+    "세종특별자치시": "세종특별자치시",
+    "sejong": "세종특별자치시",
+    "경기": "경기도",
+    "경기도": "경기도",
+    "gyeonggi": "경기도",
+    "강원": "강원도",
+    "강원도": "강원도",
+    "강원특별자치도": "강원도",
+    "gangwon": "강원도",
+    "충북": "충청북도",
+    "충청북도": "충청북도",
+    "chungcheongbuk": "충청북도",
+    "충남": "충청남도",
+    "충청남도": "충청남도",
+    "chungcheongnam": "충청남도",
+    "전북": "전라북도",
+    "전라북도": "전라북도",
+    "전북특별자치도": "전라북도",
+    "jeollabuk": "전라북도",
+    "전남": "전라남도",
+    "전라남도": "전라남도",
+    "jeollanam": "전라남도",
+    "경북": "경상북도",
+    "경상북도": "경상북도",
+    "gyeongsangbuk": "경상북도",
+    "경남": "경상남도",
+    "경상남도": "경상남도",
+    "gyeongsangnam": "경상남도",
+    "제주": "제주특별자치도",
+    "제주시": "제주특별자치도",
+    "제주도": "제주특별자치도",
+    "제주특별자치도": "제주특별자치도",
+    "jeju": "제주특별자치도",
+}
+
+_NORMALIZED_SIDO_ALIASES = {
+    re.sub(r"\s+", "", alias).lower(): canonical for alias, canonical in _SIDO_ALIASES.items()
+}
+
+_SORTED_SIDO_ALIASES = sorted(
+    _NORMALIZED_SIDO_ALIASES.items(), key=lambda item: len(item[0]), reverse=True
+)
+
+
+def _extract_sido_name(text: str) -> str | None:
+    normalized = re.sub(r"\s+", "", text).lower().strip()
+    if not normalized:
+        return None
+
+    direct = _NORMALIZED_SIDO_ALIASES.get(normalized)
+    if direct:
+        return direct
+
+    for alias, canonical in _SORTED_SIDO_ALIASES:
+        if alias in normalized:
+            return canonical
+    return None
+
+
+def _count_sido_mentions(entities_json_rows: Iterable[str]) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for raw_entities in entities_json_rows:
+        if not raw_entities:
+            continue
+        try:
+            parsed = json.loads(raw_entities)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(parsed, dict):
+            continue
+
+        matched_in_article: set[str] = set()
+        parsed_dict = cast(dict[object, object], parsed)
+        for entity_name, keywords in parsed_dict.items():
+            if isinstance(entity_name, str):
+                extracted_entity = _extract_sido_name(entity_name)
+                if extracted_entity:
+                    matched_in_article.add(extracted_entity)
+            if not isinstance(keywords, list):
+                continue
+            for keyword in keywords:
+                if not isinstance(keyword, str):
+                    continue
+                extracted_keyword = _extract_sido_name(keyword)
+                if extracted_keyword:
+                    matched_in_article.add(extracted_keyword)
+
+        for region_name in matched_in_article:
+            counts[region_name] += 1
+    return counts
+
+
+def _build_korea_choropleth_map_html(region_counts: Counter[str]) -> str | None:
+    if not region_counts:
+        return None
+
+    try:
+        import plotly.express as px
+    except ImportError:
+        return None
+
+    regional_rows = sorted(region_counts.items(), key=lambda item: (-item[1], item[0]))
+    locations = [name for name, _count in regional_rows]
+    values = [count for _name, count in regional_rows]
+
+    try:
+        fig = px.choropleth_mapbox(
+            {
+                "region": locations,
+                "availability": values,
+            },
+            geojson=_KOREA_SIDO_GEOJSON_URL,
+            locations="region",
+            color="availability",
+            featureidkey="properties.name",
+            color_continuous_scale="Tealgrn",
+            mapbox_style="carto-positron",
+            center={"lat": 36.35, "lon": 127.8},
+            zoom=6,
+            opacity=0.72,
+            labels={"availability": "Mentions"},
+        )
+    except Exception:
+        return None
+
+    fig.update_traces(
+        marker_line_color="rgba(255, 255, 255, 0.55)",
+        marker_line_width=0.8,
+        hovertemplate="%{location}<br>Mentions: %{z}<extra></extra>",
+    )
+    fig.update_layout(
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        coloraxis_colorbar={"title": "Mentions", "thickness": 16},
+    )
+    return fig.to_html(full_html=False, include_plotlyjs="cdn", default_height=420)
 
 
 _REPORT_TEMPLATE = """<!doctype html>
@@ -346,6 +541,43 @@ _REPORT_TEMPLATE = """<!doctype html>
       .chart-wrap{position:relative; height: 290px}
       .chart-wrap.tall{height: 320px}
       canvas{max-width:100%}
+      .korea-map-wrap{
+        border-radius:16px;
+        border:1px solid rgba(150,190,255,.14);
+        overflow:hidden;
+        min-height: 360px;
+        background: rgba(10,16,30,.40);
+      }
+      .korea-map-wrap .plotly-graph-div{width:100% !important}
+      .region-table-wrap{
+        margin-top:12px;
+        border-radius:14px;
+        border:1px solid rgba(150,190,255,.14);
+        overflow:auto;
+        background: rgba(10,16,30,.28);
+      }
+      .region-table{
+        width:100%;
+        border-collapse: collapse;
+        min-width: 320px;
+        font-size:13px;
+      }
+      .region-table th,
+      .region-table td{
+        padding:10px 12px;
+        border-bottom:1px solid rgba(150,190,255,.10);
+        text-align:left;
+      }
+      .region-table th{
+        font-family:var(--mono);
+        font-size:12px;
+        color: rgba(233,238,251,.72);
+        background: rgba(10,16,30,.52);
+      }
+      .region-table td:last-child,
+      .region-table th:last-child{
+        text-align:right;
+      }
 
       .notice{
         margin-top:14px;
@@ -533,6 +765,7 @@ _REPORT_TEMPLATE = """<!doctype html>
         .btn{width:100%}
         .chart-wrap{height: 260px}
         .chart-wrap.tall{height: 300px}
+        .korea-map-wrap{min-height: 300px}
       }
       @media (prefers-reduced-motion: reduce){
         *{scroll-behavior:auto !important}
@@ -557,6 +790,7 @@ _REPORT_TEMPLATE = """<!doctype html>
 
         <nav class="nav" aria-label="Jump links">
           <a class="pill" href="#charts">Charts</a>
+          <a class="pill" href="#regions">Regions</a>
           <a class="pill" href="#entities">Entities</a>
           <a class="pill" href="#articles">Articles</a>
           {% if errors %}
@@ -640,6 +874,7 @@ _REPORT_TEMPLATE = """<!doctype html>
           <h2>Visuals</h2>
           <div class="right">
             <span class="kbd">Chart.js</span>
+            <span class="kbd">Plotly</span>
             <span class="kbd">dark editorial</span>
             <span class="kbd">responsive</span>
           </div>
@@ -702,27 +937,141 @@ _REPORT_TEMPLATE = """<!doctype html>
             </div>
           </article>
 
-          <article class="panel" aria-label="Notes">
-            <header class="panel-hd">
-              <div>
-                <p class="panel-title">Reading Notes</p>
-                <p class="panel-sub">Fast scan guidance</p>
-              </div>
-              <div class="pill" aria-hidden="true">tips</div>
-            </header>
-            <div class="panel-bd">
-              <p class="muted" style="margin:0; line-height:1.6; font-size:13px">
-                Use the entity chart to spot concentration, the timeline to detect bursts, and the source mix to
-                gauge coverage bias. The article list keeps metadata compact for quick triage.
-              </p>
-              <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px">
-                <span class="chip brand"><strong>Teal</strong> momentum</span>
-                <span class="chip"><strong>Amber</strong> signal</span>
-                <span class="chip"><strong>Mono</strong> data</span>
-              </div>
-            </div>
-          </article>
+           <article class="panel" aria-label="Notes">
+             <header class="panel-hd">
+               <div>
+                 <p class="panel-title">Reading Notes</p>
+                 <p class="panel-sub">Fast scan guidance</p>
+               </div>
+               <div class="pill" aria-hidden="true">tips</div>
+             </header>
+             <div class="panel-bd">
+               <p class="muted" style="margin:0; line-height:1.6; font-size:13px">
+                 Use the entity chart to spot concentration, the timeline to detect bursts, and the source mix to
+                 gauge coverage bias. The article list keeps metadata compact for quick triage.
+               </p>
+               <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px">
+                 <span class="chip brand"><strong>Teal</strong> momentum</span>
+                 <span class="chip"><strong>Amber</strong> signal</span>
+                 <span class="chip"><strong>Mono</strong> data</span>
+               </div>
+             </div>
+           </article>
+         </div>
+
+         <div class="grid" style="margin-top:14px">
+           <article class="panel" aria-label="Data freshness">
+             <header class="panel-hd">
+               <div>
+                 <p class="panel-title">Data Freshness</p>
+                 <p class="panel-sub">Collection lag distribution</p>
+               </div>
+               <div class="pill" aria-hidden="true">lag</div>
+             </header>
+             <div class="panel-bd">
+               <div class="chart-wrap" role="img" aria-label="Bar chart showing collection lag buckets">
+                 <canvas id="chartFreshness"></canvas>
+               </div>
+               <noscript>
+                 <p class="muted small">Charts require JavaScript. Enable JS to see freshness data.</p>
+               </noscript>
+             </div>
+           </article>
+
+           <article class="panel" aria-label="Entity extraction rate">
+             <header class="panel-hd">
+               <div>
+                 <p class="panel-title">Entity Extraction Rate</p>
+                 <p class="panel-sub">Articles with matched entities</p>
+               </div>
+               <div class="pill" aria-hidden="true">rate</div>
+             </header>
+             <div class="panel-bd">
+               <div class="chart-wrap" role="img" aria-label="Doughnut chart showing entity extraction rate">
+                 <canvas id="chartEntityRate"></canvas>
+               </div>
+               <noscript>
+                 <p class="muted small">Charts require JavaScript. Enable JS to see extraction rate.</p>
+               </noscript>
+             </div>
+           </article>
+         </div>
+
+         <div class="grid" style="margin-top:14px">
+           <article class="panel" aria-label="Source health">
+             <header class="panel-hd">
+               <div>
+                 <p class="panel-title">Source Health</p>
+                 <p class="panel-sub">Article count by source (sorted)</p>
+               </div>
+               <div class="pill" aria-hidden="true">health</div>
+             </header>
+             <div class="panel-bd">
+               <div class="chart-wrap tall" role="img" aria-label="Horizontal bar chart showing source health">
+                 <canvas id="chartSourceHealth"></canvas>
+               </div>
+               <noscript>
+                 <p class="muted small">Charts require JavaScript. Enable JS to see source health.</p>
+               </noscript>
+             </div>
+           </article>
+         </div>
+        </section>
+
+      <section id="regions" class="section" aria-label="Regional mobility availability">
+        <div class="section-hd">
+          <h2>Regional Mobility Availability</h2>
+          <div class="right">
+            <span class="kbd">sido level</span>
+            <span class="kbd">choropleth_mapbox</span>
+          </div>
         </div>
+
+        <article class="panel" aria-label="Korea regional mobility map">
+          <header class="panel-hd">
+            <div>
+              <p class="panel-title">Korea Mobility Coverage</p>
+              <p class="panel-sub">Derived from entities_json region mentions</p>
+            </div>
+            <div class="pill" aria-hidden="true">map</div>
+          </header>
+          <div class="panel-bd">
+            {% if regional_rows %}
+              {% if korea_map_html %}
+              <div class="korea-map-wrap" role="img" aria-label="Korea choropleth map by regional mobility mentions">
+                {{ korea_map_html }}
+              </div>
+              {% else %}
+              <p class="muted small" style="margin:0">
+                Plotly map rendering is unavailable in this runtime. Showing fallback regional table.
+              </p>
+              {% endif %}
+
+              <div class="region-table-wrap" aria-label="Regional mobility availability table">
+                <table class="region-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Region (시도)</th>
+                      <th scope="col">Mentions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for region_name, mention_count in regional_rows %}
+                    <tr>
+                      <td>{{ region_name|e }}</td>
+                      <td>{{ mention_count }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="muted" style="margin:0; font-size:13px; line-height:1.6">
+                No 시도-level mobility entities were detected in recent data.
+              </p>
+            {% endif %}
+          </div>
+        </article>
       </section>
 
       <section id="entities" class="section" aria-label="Entity table">
@@ -881,7 +1230,7 @@ _REPORT_TEMPLATE = """<!doctype html>
             const direct = new Date(s);
             if (!isNaN(direct.getTime())) return direct;
 
-            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            const m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
             if (m) {
               const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
               if (!isNaN(d.getTime())) return d;
@@ -1098,6 +1447,143 @@ _REPORT_TEMPLATE = """<!doctype html>
               }
             });
           }
+
+
+           // Chart 1: Data Freshness (collection lag in hours)
+           function buildFreshness(items) {
+             const lagBuckets = { "0-1h": 0, "1-6h": 0, "6-24h": 0, "1-3d": 0, "3-7d": 0, "7d+": 0 };
+             const now = new Date();
+             for (const a of items) {
+               const pubStr = a && (a.published_at || a.published);
+               const collStr = a && a.collected_at;
+               if (!pubStr || !collStr) continue;
+               const pubDate = new Date(String(pubStr));
+               const collDate = new Date(String(collStr));
+               if (isNaN(pubDate.getTime()) || isNaN(collDate.getTime())) continue;
+               const lagMs = collDate.getTime() - pubDate.getTime();
+               const lagHours = lagMs / (1000 * 60 * 60);
+               if (lagHours < 1) lagBuckets["0-1h"]++;
+               else if (lagHours < 6) lagBuckets["1-6h"]++;
+               else if (lagHours < 24) lagBuckets["6-24h"]++;
+               else if (lagHours < 72) lagBuckets["1-3d"]++;
+               else if (lagHours < 168) lagBuckets["3-7d"]++;
+               else lagBuckets["7d+"]++;
+             }
+             return { labels: Object.keys(lagBuckets), values: Object.values(lagBuckets) };
+           }
+
+           const freshnessData = buildFreshness(articles);
+           const freshnessCanvas = document.getElementById("chartFreshness");
+           if (freshnessCanvas && freshnessData.labels.length) {
+             new Chart(freshnessCanvas.getContext("2d"), {
+               type: "bar",
+               data: {
+                 labels: freshnessData.labels,
+                 datasets: [{
+                   label: "articles",
+                   data: freshnessData.values,
+                   backgroundColor: "rgba(120,162,255,.35)",
+                   borderColor: "rgba(120,162,255,.72)",
+                   borderWidth: 1.2,
+                   borderRadius: 8
+                 }]
+               },
+               options: {
+                 plugins: { legend: { display: false } },
+                 scales: { y: { beginAtZero: true } }
+               }
+             });
+           }
+
+           // Chart 2: Entity Extraction Rate (doughnut with center text)
+           function buildEntityRate(items) {
+             let withEntities = 0, withoutEntities = 0;
+             for (const a of items) {
+               const ents = a && a.matched_entities;
+               if (ents && Object.keys(ents).length > 0) withEntities++;
+               else withoutEntities++;
+             }
+             return { with: withEntities, without: withoutEntities };
+           }
+
+           const entityRateData = buildEntityRate(articles);
+           const entityRateCanvas = document.getElementById("chartEntityRate");
+           if (entityRateCanvas) {
+             const total = entityRateData.with + entityRateData.without;
+             const pct = total > 0 ? Math.round((entityRateData.with / total) * 100) : 0;
+             const plugin = {
+               id: "textCenter",
+               beforeDatasetsDraw(c) {
+                 const { width, height } = c.chartArea;
+                 const x = c.chartArea.left + width / 2;
+                 const y = c.chartArea.top + height / 2;
+                 c.ctx.save();
+                 c.ctx.font = "bold 24px sans-serif";
+                 c.ctx.fillStyle = "rgba(233,238,251,.8)";
+                 c.ctx.textAlign = "center";
+                 c.ctx.textBaseline = "middle";
+                 c.ctx.fillText(pct + "%", x, y);
+                 c.ctx.restore();
+               }
+             };
+             new Chart(entityRateCanvas.getContext("2d"), {
+               type: "doughnut",
+               data: {
+                 labels: ["With entities", "Without entities"],
+                 datasets: [{
+                   data: [entityRateData.with, entityRateData.without],
+                   backgroundColor: ["rgba(95,222,132,.35)", "rgba(255,91,110,.35)"],
+                   borderColor: ["rgba(95,222,132,.80)", "rgba(255,91,110,.80)"],
+                   borderWidth: 1.2
+                 }]
+               },
+               options: {
+                 cutout: "62%",
+                 plugins: {
+                   legend: { position: "bottom" },
+                   tooltip: { enabled: true }
+                 }
+               },
+               plugins: [plugin]
+             });
+           }
+
+           // Chart 3: Source Health (horizontal bar, sorted descending)
+           function buildSourceHealth(items) {
+             const map = new Map();
+             for (const a of items) {
+               const s = (a && a.source) ? String(a.source) : "unknown";
+               const key = s.trim() || "unknown";
+               map.set(key, (map.get(key) || 0) + 1);
+             }
+             const pairs = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+             return { labels: pairs.map(p => p[0]), values: pairs.map(p => p[1]) };
+           }
+
+           const sourceHealthData = buildSourceHealth(articles);
+           const sourceHealthCanvas = document.getElementById("chartSourceHealth");
+           if (sourceHealthCanvas && sourceHealthData.labels.length) {
+             const colors = palette(sourceHealthData.labels.length);
+             new Chart(sourceHealthCanvas.getContext("2d"), {
+               type: "bar",
+               data: {
+                 labels: sourceHealthData.labels,
+                 datasets: [{
+                   label: "articles",
+                   data: sourceHealthData.values,
+                   backgroundColor: colors.map(c => c.replace(")", ", .35)").replace("rgba", "rgba")),
+                   borderColor: colors.map(c => c.replace(")", ", .80)").replace("rgba", "rgba")),
+                   borderWidth: 1.2,
+                   borderRadius: 8
+                 }]
+               },
+               options: {
+                 indexAxis: "y",
+                 plugins: { legend: { display: false } },
+                 scales: { x: { beginAtZero: true } }
+               }
+             });
+           }
         })();
       </script>
     </main>
@@ -1109,24 +1595,24 @@ _REPORT_TEMPLATE = """<!doctype html>
 def generate_index_html(report_dir: Path) -> Path:
     """Generate an index.html that lists all available report files."""
     report_dir.mkdir(parents=True, exist_ok=True)
-    
+
     html_files = sorted(
         [f for f in report_dir.glob("*.html") if f.name != "index.html"],
         key=lambda p: p.name,
     )
-    
+
     reports = []
     for html_file in html_files:
         name = html_file.stem
         display_name = name.replace("_report", "").replace("_", " ").title()
         reports.append({"filename": html_file.name, "display_name": display_name})
-    
+
     template = cast(_TemplateRenderer, Template(_INDEX_TEMPLATE))
     rendered = template.render(
         reports=reports,
         generated_at=datetime.now(timezone.utc),
     )
-    
+
     index_path = report_dir / "index.html"
     _ = index_path.write_text(rendered, encoding="utf-8")
     return index_path
