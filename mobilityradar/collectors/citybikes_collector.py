@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 from datetime import datetime, timezone
 
@@ -79,7 +80,7 @@ def _rank_networks(raw_networks: list[object], focus_cities: set[str]) -> list[d
     return [network for _, network in ranked]
 
 
-def _network_to_article(network: dict[str, object], *, source: Source, category: str) -> Article | None:
+def _network_to_article(network: dict[str, object], *, source: Source, category: str) -> Optional[Article]:
     network_id = str(network.get("id") or "").strip()
     network_name = str(network.get("name") or "").strip() or "CityBikes Network"
 
