@@ -64,13 +64,13 @@ def _seed_article(
 
 
 def test_handle_search(tmp_path: Path) -> None:
-    from mobilityradar.mcp_server.tools import handle_search
+    from mcp_server.tools import handle_search
 
-    db_path = tmp_path / "mobilityradar.duckdb"
+    db_path = tmp_path / "radar.duckdb"
     search_db_path = tmp_path / "search.db"
     _init_articles_table(db_path)
 
-    now = datetime.now(tz=UTC)
+    now = datetime.now(UTC)
     recent_link = "https://example.com/recent"
     old_link = "https://example.com/old"
 
@@ -105,11 +105,11 @@ def test_handle_search(tmp_path: Path) -> None:
 
 
 def test_handle_recent_updates(tmp_path: Path) -> None:
-    from mobilityradar.mcp_server.tools import handle_recent_updates
+    from mcp_server.tools import handle_recent_updates
 
-    db_path = tmp_path / "mobilityradar.duckdb"
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now(tz=UTC)
+    now = datetime.now(UTC)
 
     _seed_article(
         db_path=db_path,
@@ -133,9 +133,9 @@ def test_handle_recent_updates(tmp_path: Path) -> None:
 
 
 def test_handle_sql_select(tmp_path: Path) -> None:
-    from mobilityradar.mcp_server.tools import handle_sql
+    from mcp_server.tools import handle_sql
 
-    db_path = tmp_path / "mobilityradar.duckdb"
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
 
     output = handle_sql(db_path=db_path, query="SELECT COUNT(*) AS total FROM articles")
@@ -145,9 +145,9 @@ def test_handle_sql_select(tmp_path: Path) -> None:
 
 
 def test_handle_sql_blocked(tmp_path: Path) -> None:
-    from mobilityradar.mcp_server.tools import handle_sql
+    from mcp_server.tools import handle_sql
 
-    db_path = tmp_path / "mobilityradar.duckdb"
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
 
     output = handle_sql(db_path=db_path, query="DROP TABLE articles")
@@ -156,11 +156,11 @@ def test_handle_sql_blocked(tmp_path: Path) -> None:
 
 
 def test_handle_top_trends(tmp_path: Path) -> None:
-    from mobilityradar.mcp_server.tools import handle_top_trends
+    from mcp_server.tools import handle_top_trends
 
-    db_path = tmp_path / "mobilityradar.duckdb"
+    db_path = tmp_path / "radar.duckdb"
     _init_articles_table(db_path)
-    now = datetime.now(tz=UTC)
+    now = datetime.now(UTC)
 
     _seed_article(
         db_path=db_path,
@@ -187,33 +187,9 @@ def test_handle_top_trends(tmp_path: Path) -> None:
     assert "1" in output
 
 
-def test_handle_route_suggest(tmp_path: Path) -> None:
-    from mobilityradar.mcp_server.tools import handle_route_suggest
+def test_handle_price_watch_stub() -> None:
+    from mcp_server.tools import handle_price_watch
 
-    db_path = tmp_path / "mobilityradar.duckdb"
-    _init_articles_table(db_path)
-    now = datetime.now(tz=UTC)
+    output = handle_price_watch(threshold=10.0)
 
-    _seed_article(
-        db_path=db_path,
-        article_id=1,
-        title="Traffic congestion spikes on downtown route",
-        link="https://example.com/route",
-        collected_at=now - timedelta(hours=2),
-        entities={"Congestion": ["traffic", "congestion"]},
-    )
-    _seed_article(
-        db_path=db_path,
-        article_id=2,
-        title="Unrelated startup funding news",
-        link="https://example.com/funding",
-        collected_at=now - timedelta(hours=1),
-        entities={"Transit": ["bus"]},
-    )
-
-    output = handle_route_suggest(db_path=db_path, days=7, limit=10)
-
-    assert "Route insights" in output
-    assert "Traffic congestion spikes on downtown route" in output
-    assert "Congestion" in output
-    assert "Unrelated startup funding news" not in output
+    assert "Not available in template project" in output
