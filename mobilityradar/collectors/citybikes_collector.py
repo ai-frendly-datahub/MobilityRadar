@@ -1,19 +1,23 @@
 from __future__ import annotations
-from typing import Optional
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import requests
 
 from ..models import Article, Source
 
+
 _NETWORKS_TIMEOUT = 20
-_DEFAULT_HEADERS = {"User-Agent": "MobilityRadar/1.0 (+https://github.com/zzragida/ai-frendly-datahub)"}
+_DEFAULT_HEADERS = {
+    "User-Agent": "MobilityRadar/1.0 (+https://github.com/zzragida/ai-frendly-datahub)"
+}
 
 
 def collect_citybikes(source: Source, *, category: str, limit: int, timeout: int) -> list[Article]:
     """Collect bike-sharing network snapshots from the CityBikes public API."""
-    response = requests.get(source.url, timeout=max(timeout, _NETWORKS_TIMEOUT), headers=_DEFAULT_HEADERS)
+    response = requests.get(
+        source.url, timeout=max(timeout, _NETWORKS_TIMEOUT), headers=_DEFAULT_HEADERS
+    )
     response.raise_for_status()
 
     payload = response.json()
@@ -80,7 +84,9 @@ def _rank_networks(raw_networks: list[object], focus_cities: set[str]) -> list[d
     return [network for _, network in ranked]
 
 
-def _network_to_article(network: dict[str, object], *, source: Source, category: str) -> Optional[Article]:
+def _network_to_article(
+    network: dict[str, object], *, source: Source, category: str
+) -> Article | None:
     network_id = str(network.get("id") or "").strip()
     network_name = str(network.get("name") or "").strip() or "CityBikes Network"
 
@@ -111,7 +117,9 @@ def _network_to_article(network: dict[str, object], *, source: Source, category:
         companies = [company_raw.strip()]
 
     summary_parts = [
-        f"Bike-share network in {city}, {country}." if country else f"Bike-share network in {city}.",
+        f"Bike-share network in {city}, {country}."
+        if country
+        else f"Bike-share network in {city}.",
         f"Coordinates: {latitude}, {longitude}.",
     ]
     if companies:
@@ -123,7 +131,7 @@ def _network_to_article(network: dict[str, object], *, source: Source, category:
         title=f"{title_city} bike-share status - {network_name}",
         link=link,
         summary=" ".join(summary_parts),
-        published=datetime.now(timezone.utc),
+        published=datetime.now(UTC),
         source=source.name,
         category=category,
     )

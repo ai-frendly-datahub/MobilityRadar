@@ -5,7 +5,7 @@ import re
 import shutil
 from collections import Counter
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -82,7 +82,7 @@ def generate_report(
         category=category,
         articles=articles_list,  # Keep original for template rendering
         articles_json=articles_json,  # JSON-serializable version for charts
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
         stats=stats,
         entity_counts=entity_counts,
         regional_rows=regional_rows,
@@ -91,7 +91,7 @@ def generate_report(
     )
     _ = output_path.write_text(rendered, encoding="utf-8")
 
-    now_ts = datetime.now(timezone.utc)
+    now_ts = datetime.now(UTC)
     date_stamp = now_ts.strftime("%Y%m%d")
     dated_name = f"{category.category_name}_{date_stamp}.html"
     dated_path = output_path.parent / dated_name
@@ -303,7 +303,7 @@ def generate_index_html(report_dir: Path) -> Path:
     template = _get_jinja_env().get_template("index.html")
     rendered = template.render(
         reports=reports,
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
     )
 
     index_path = report_dir / "index.html"
