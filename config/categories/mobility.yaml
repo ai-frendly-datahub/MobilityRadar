@@ -1,28 +1,58 @@
-# This is a template for a new Radar category.
-# Copy this file to a new file named `[your_category_name].yaml` and fill in the details.
+category_name: "mobility"
+display_name: "Mobility Radar"
 
-category_name: "my_category"
-display_name: "My Category Radar"
-
-# List of data sources to collect from
-# Supported types: "rss", "html" (html is a placeholder for future extension)
 sources:
-  - name: "Example News RSS"
+  # Micromobility & shared transport news
+  - name: "Micromobility Industries"
     type: "rss"
-    url: "https://www.example.com/feed"
-  # - name: "Example Website"
-  #   type: "html"
-  #   url: "https://www.example.com/news"
+    url: "https://micromobility.io/feed"
+  - name: "The Driven"
+    type: "rss"
+    url: "https://thedriven.io/feed/"
+  - name: "Electrek"
+    type: "rss"
+    url: "https://electrek.co/feed/"
+  - name: "Smart Cities Dive"
+    type: "rss"
+    url: "https://www.smartcitiesdive.com/feeds/news/"
 
-# List of entities to extract from the collected items.
-# The analyzer will perform simple keyword matching based on these lists.
 entities:
-  - name: "Topic"
+  - name: "VehicleType"
+    display_name: "이동수단 유형"
     keywords:
-      - "keyword1"
-      - "keyword2"
-      - "keyword3"
-  - name: "Brand"
+      - "e-scooter"
+      - "ebike"
+      - "e-bike"
+      - "bicycle"
+      - "scooter"
+      - "kickboard"
+      - "전동킥보드"
+      - "자전거"
+      - "공유자전거"
+      - "공유킥보드"
+      - "moped"
+  - name: "Service"
+    display_name: "서비스"
     keywords:
-      - "BrandA"
-      - "BrandB"
+      - "lime"
+      - "bird"
+      - "tier"
+      - "bolt"
+      - "voi"
+      - "씽씽"
+      - "킥고잉"
+      - "카카오바이크"
+      - "따릉이"
+      - "uber"
+      - "lyft"
+  - name: "Regulation"
+    display_name: "규제/정책"
+    keywords:
+      - "regulation"
+      - "safety"
+      - "helmet"
+      - "speed limit"
+      - "규제"
+      - "안전"
+      - "법률"
+      - "조례"
