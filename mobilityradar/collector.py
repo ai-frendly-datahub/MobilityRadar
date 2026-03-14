@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import feedparser
 import requests
+import structlog
 from pybreaker import CircuitBreakerError
 from requests.adapters import HTTPAdapter
 from tenacity import (
@@ -27,6 +28,8 @@ from .exceptions import NetworkError, ParseError, SourceError
 from .models import Article, Source
 from .resilience import get_circuit_breaker_manager
 
+
+logger = structlog.get_logger(__name__)
 
 _DEFAULT_HEADERS: dict[str, str] = {
     "User-Agent": "Mozilla/5.0 (compatible; RadarTemplateBot/1.0; +https://github.com/zzragida/ai-frendly-datahub)",
@@ -212,6 +215,13 @@ def _collect_single(
 
             # Skip entries with empty title or link
             if not title or title == "(no title)" or not link:
+                logger.debug(
+                    "skipped_article",
+                    source=source.name,
+                    reason="empty_title_or_link",
+                    title=title if title else "(empty)",
+                    link=link if link else "(empty)",
+                )
                 continue
 
             items.append(
