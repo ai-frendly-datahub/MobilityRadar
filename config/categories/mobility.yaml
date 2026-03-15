@@ -16,6 +16,14 @@ sources:
     type: "rss"
     url: "https://www.smartcitiesdive.com/feeds/news/"
 
+  # --- JavaScript-rendered sources (Playwright) ---
+  - name: "서울 따릉이"
+    type: "javascript"
+    url: "https://www.ddareungi.seoul.kr/station"
+  - name: "서울 교통정보"
+    type: "javascript"
+    url: "https://topis.seoul.go.kr/refRoom/openRefRoom_2.do"
+
 entities:
   - name: "VehicleType"
     display_name: "이동수단 유형"

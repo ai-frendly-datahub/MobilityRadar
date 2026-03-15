@@ -202,6 +202,10 @@ def collect_sources(
     _set_collection_controls(throttler, health_store)
     session = _create_session()
 
+    _js_types = {"javascript", "browser"}
+    rss_sources = [s for s in sources if s.type.lower() not in _js_types]
+    js_sources = [s for s in sources if s.type.lower() in _js_types]
+
     def _collect_for_source(source: Source) -> tuple[list[Article], list[str]]:
         if health_store.is_disabled(source.name):
             return [], [f"{source.name}: Source disabled (crawl health threshold reached)"]
@@ -231,20 +235,34 @@ def collect_sources(
 
     try:
         if workers == 1:
-            for source in sources:
+            for source in rss_sources:
                 source_articles, source_errors = _collect_for_source(source)
                 articles.extend(source_articles)
                 errors.extend(source_errors)
         else:
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 future_map: list[Future[tuple[list[Article], list[str]]]] = [
-                    executor.submit(_collect_for_source, source) for source in sources
+                    executor.submit(_collect_for_source, source) for source in rss_sources
                 ]
 
                 for future in future_map:
                     source_articles, source_errors = future.result()
                     articles.extend(source_articles)
                     errors.extend(source_errors)
+
+        if js_sources:
+            try:
+                from .browser_collector import collect_browser_sources
+
+                js_articles, js_errors = collect_browser_sources(js_sources, category)
+                articles.extend(js_articles)
+                errors.extend(js_errors)
+            except ImportError:
+                logger.warning(
+                    "playwright_unavailable",
+                    js_source_count=len(js_sources),
+                    hint="pip install 'radar-core[browser]'",
+                )
     finally:
         session.close()
         health_store.close()
