@@ -10,6 +10,7 @@ class Source:
     name: str
     type: str
     url: str
+    options: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass
