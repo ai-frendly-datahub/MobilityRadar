@@ -163,6 +163,20 @@ class RadarStorage:
             )
         return results
 
+    def recent_entities_json(self, category: str, *, days: int = 7) -> list[str]:
+        since = _utc_naive(datetime.now(UTC) - timedelta(days=days))
+        rows = self.conn.execute(
+            """
+            SELECT entities_json FROM articles
+            WHERE category = ?
+              AND COALESCE(published, collected_at) >= ?
+              AND entities_json IS NOT NULL
+            ORDER BY COALESCE(published, collected_at) DESC
+            """,
+            [category, since],
+        ).fetchall()
+        return [str(row[0]) for row in rows if row and row[0]]
+
     def delete_older_than(self, days: int) -> int:
         """보존 기간 밖 데이터 삭제."""
         cutoff = _utc_naive(datetime.now(UTC) - timedelta(days=days))
