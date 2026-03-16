@@ -11,7 +11,7 @@ from mobilityradar.common.validators import validate_article
 from mobilityradar.config_loader import load_category_config, load_settings
 from mobilityradar.date_storage import apply_date_storage_policy
 from mobilityradar.raw_logger import RawLogger
-from mobilityradar.reporter import generate_report
+from mobilityradar.reporter import generate_index_html, generate_report
 from mobilityradar.search_index import SearchIndex
 from mobilityradar.storage import RadarStorage
 
@@ -149,6 +149,7 @@ def run(
         errors=all_errors,
         entities_json_rows=recent_entities_json,
     )
+    generate_index_html(settings.report_dir)
     date_storage = apply_date_storage_policy(
         database_path=settings.database_path,
         raw_data_dir=settings.raw_data_dir,
