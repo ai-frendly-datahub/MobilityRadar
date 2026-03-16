@@ -1,0 +1,23 @@
+{
+  "date": "2026-03-16",
+  "category": "mobility",
+  "article_count": 59,
+  "source_count": 3,
+  "matched_count": 4,
+  "top_entities": [
+    {
+      "name": "VehicleType",
+      "count": 4
+    },
+    {
+      "name": "Regulation",
+      "count": 1
+    }
+  ],
+  "sources": {
+    "Electrek": 33,
+    "The Driven": 16,
+    "Smart Cities Dive": 10
+  },
+  "generated_at": "2026-03-16T22:56:20.166197+09:00"
+}
