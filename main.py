@@ -124,9 +124,6 @@ def run(
         for article in validated_articles:
             search_idx.upsert(article.link, article.title, article.summary)
 
-    recent_entities_json = storage.recent_entities_json(
-        category_cfg.category_name, days=recent_days
-    )
     recent_articles = storage.recent_articles(category_cfg.category_name, days=recent_days)
     storage.close()
 
@@ -137,7 +134,6 @@ def run(
         "window_days": recent_days,
     }
 
-    # Combine collection and validation errors
     all_errors = errors + validation_errors
 
     output_path = settings.report_dir / f"{category_cfg.category_name}_report.html"
@@ -147,7 +143,6 @@ def run(
         output_path=output_path,
         stats=stats,
         errors=all_errors,
-        entities_json_rows=recent_entities_json,
     )
     generate_index_html(settings.report_dir)
     date_storage = apply_date_storage_policy(
