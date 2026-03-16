@@ -111,12 +111,10 @@ def load_category_config(category_name: str, categories_dir: Path | None = None)
 def _parse_source(entry: dict[str, object]) -> Source:
     if not entry:
         raise ValueError("Empty source entry in category config")
-    options = {k: v for k, v in entry.items() if k not in {"name", "type", "url"}}
     return Source(
         name=_string_value(entry, "name", "Unnamed Source"),
         type=_string_value(entry, "type", "rss"),
         url=_string_value(entry, "url", ""),
-        options=options,
     )
 
 
