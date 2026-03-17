@@ -3,9 +3,6 @@ display_name: "Mobility Radar"
 
 sources:
   # Micromobility & shared transport news
-  - name: "Micromobility Industries"
-    type: "rss"
-    url: "https://micromobility.io/feed"
   - name: "The Driven"
     type: "rss"
     url: "https://thedriven.io/feed/"
