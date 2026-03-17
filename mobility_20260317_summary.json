@@ -1,7 +1,7 @@
 {
   "date": "2026-03-17",
   "category": "mobility",
-  "article_count": 78,
+  "article_count": 79,
   "source_count": 4,
   "matched_count": 24,
   "top_entities": [
@@ -16,9 +16,9 @@
   ],
   "sources": {
     "서울 교통정보": 1,
+    "Electrek": 47,
     "The Driven": 18,
-    "Electrek": 46,
     "Smart Cities Dive": 13
   },
-  "generated_at": "2026-03-17T10:10:47.678020+09:00"
+  "generated_at": "2026-03-17T11:07:15.962836+09:00"
 }
