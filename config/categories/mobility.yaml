@@ -16,6 +16,16 @@ sources:
     type: "rss"
     url: "https://www.smartcitiesdive.com/feeds/news/"
 
+  # InsideEVs - EV 전문 미디어
+  - name: "InsideEVs"
+    type: "rss"
+    url: "https://insideevs.com/rss/news/all/"
+
+  # CleanTechnica - 클린에너지/EV 뉴스
+  - name: "CleanTechnica"
+    type: "rss"
+    url: "https://cleantechnica.com/feed/"
+
   # --- JavaScript-rendered sources (Playwright) ---
   - name: "서울 따릉이"
     type: "javascript"
