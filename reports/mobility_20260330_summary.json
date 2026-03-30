@@ -1,0 +1,38 @@
+{
+  "date": "2026-03-30",
+  "category": "mobility",
+  "article_count": 200,
+  "source_count": 6,
+  "matched_count": 96,
+  "top_entities": [
+    {
+      "name": "VehicleType",
+      "count": 78
+    },
+    {
+      "name": "EVModel",
+      "count": 38
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 22
+    },
+    {
+      "name": "Regulation",
+      "count": 5
+    },
+    {
+      "name": "Service",
+      "count": 3
+    }
+  ],
+  "sources": {
+    "서울 교통정보": 1,
+    "CleanTechnica": 78,
+    "The Driven": 25,
+    "Electrek": 60,
+    "InsideEVs": 23,
+    "Smart Cities Dive": 13
+  },
+  "generated_at": "2026-03-30T11:31:20.672227+09:00"
+}
