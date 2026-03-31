@@ -76,6 +76,61 @@ sources:
     config:
       wait_for: ".map_wrap"
 
+  # === Reddit EV/모빌리티 커뮤니티 ===
+  - name: "r/electricvehicles"
+    type: "rss"
+    url: "https://www.reddit.com/r/electricvehicles/.rss"
+
+  - name: "r/teslamotors"
+    type: "rss"
+    url: "https://www.reddit.com/r/teslamotors/.rss"
+
+  - name: "r/Rivian"
+    type: "rss"
+    url: "https://www.reddit.com/r/Rivian/.rss"
+
+  - name: "r/electricscooters"
+    type: "rss"
+    url: "https://www.reddit.com/r/ElectricScooters/.rss"
+
+  - name: "r/SelfDrivingCars"
+    type: "rss"
+    url: "https://www.reddit.com/r/SelfDrivingCars/.rss"
+
+  - name: "r/ebikes"
+    type: "rss"
+    url: "https://www.reddit.com/r/ebikes/.rss"
+
+  - name: "r/korea"
+    type: "rss"
+    url: "https://www.reddit.com/r/korea/.rss"
+
+  # === EV/모빌리티 팟캐스트 ===
+  - name: "Fully Charged Show"
+    type: "rss"
+    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCzz4CoEgSgWNs9ZSb8Xt1WA"
+
+  - name: "Out of Spec Reviews"
+    type: "rss"
+    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVIeSzghPOFQro8vzrrDvIA"
+
+  - name: "Transport Evolved"
+    type: "rss"
+    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC3HjB3X8jeENm46HCkI0Inw"
+
+  # === 국제 모빌리티 뉴스 ===
+  - name: "The Mobility House"
+    type: "rss"
+    url: "https://www.mobilityhouse.com/int_en/magazine/feed/"
+
+  - name: "Transport & Environment"
+    type: "rss"
+    url: "https://www.transportenvironment.org/feed/"
+
+  - name: "Automotive News Europe"
+    type: "rss"
+    url: "https://europe.autonews.com/rss.xml"
+
 entities:
   - name: "VehicleType"
     display_name: "이동수단 유형"
