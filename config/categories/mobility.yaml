@@ -2,39 +2,85 @@ category_name: "mobility"
 display_name: "Mobility Radar"
 
 sources:
-  # Micromobility & shared transport news
+  # === 글로벌 EV/모빌리티 뉴스 ===
   - name: "The Driven"
     type: "rss"
     url: "https://thedriven.io/feed/"
+
   - name: "Electrek"
     type: "rss"
     url: "https://electrek.co/feed/"
-  - name: "Smart Cities Dive"
-    type: "rss"
-    url: "https://www.smartcitiesdive.com/feeds/news/"
 
-  # InsideEVs - EV 전문 미디어
   - name: "InsideEVs"
     type: "rss"
     url: "https://insideevs.com/rss/news/all/"
 
-  # CleanTechnica - 클린에너지/EV 뉴스
   - name: "CleanTechnica"
     type: "rss"
     url: "https://cleantechnica.com/feed/"
 
-  # --- JavaScript-rendered sources (Playwright) ---
+  - name: "Green Car Reports"
+    type: "rss"
+    url: "https://www.greencarreports.com/rss"
+
+  - name: "EV Obsession"
+    type: "rss"
+    url: "https://evobsession.com/feed/"
+
+  - name: "Charged EVs"
+    type: "rss"
+    url: "https://chargedevs.com/feed/"
+
+  # === 스마트시티/교통 ===
+  - name: "Smart Cities Dive"
+    type: "rss"
+    url: "https://www.smartcitiesdive.com/feeds/news/"
+
+  - name: "Cities Today"
+    type: "rss"
+    url: "https://cities-today.com/feed/"
+
+  - name: "Mobility Payments"
+    type: "rss"
+    url: "https://www.mobilitypayments.com/rss/"
+
+  # === 국내 모빌리티 ===
+  - name: "전자신문 모빌리티"
+    type: "rss"
+    url: "https://www.etnews.com/rss/car.xml"
+
+  - name: "조선비즈 자동차"
+    type: "rss"
+    url: "https://biz.chosun.com/rss/car.xml"
+
+  - name: "한경 자동차"
+    type: "rss"
+    url: "https://www.hankyung.com/feed/auto"
+
+  # === 공공 데이터 (Playwright) ===
   - name: "서울 따릉이"
     type: "javascript"
     url: "https://www.ddareungi.seoul.kr/station"
+    config:
+      wait_for: ".station_list"
+
   - name: "서울 교통정보"
     type: "javascript"
     url: "https://topis.seoul.go.kr/refRoom/openRefRoom_2.do"
+    config:
+      wait_for: ".board_list"
+
+  - name: "환경부 전기차 충전소"
+    type: "javascript"
+    url: "https://www.ev.or.kr/evmonitor"
+    config:
+      wait_for: ".map_wrap"
 
 entities:
   - name: "VehicleType"
     display_name: "이동수단 유형"
     keywords:
+      # 마이크로모빌리티
       - "e-scooter"
       - "ebike"
       - "e-bike"
@@ -46,30 +92,61 @@ entities:
       - "공유자전거"
       - "공유킥보드"
       - "moped"
+      - "전동휠"
+      - "세그웨이"
+      - "PM"
+      - "개인형이동장치"
+      # 전기차
       - "electric vehicle"
       - "EV"
       - "전기차"
-      - "전동휠"
-      - "세그웨이"
+      - "BEV"
+      - "PHEV"
+      - "플러그인하이브리드"
+      - "수소차"
+      - "FCEV"
+      # 자율주행
+      - "autonomous"
+      - "자율주행"
+      - "robotaxi"
+      - "로보택시"
+      - "self-driving"
+
   - name: "Service"
     display_name: "서비스"
     keywords:
+      # 글로벌 서비스
       - "lime"
       - "bird"
       - "tier"
       - "bolt"
       - "voi"
-      - "씽씽"
-      - "킥고잉"
-      - "카카오바이크"
-      - "따릉이"
       - "uber"
       - "lyft"
+      - "waymo"
+      - "cruise"
+      # 국내 서비스
+      - "씽씽"
+      - "킥고잉"
+      - "빔"
+      - "카카오바이크"
+      - "따릉이"
       - "쏘카"
       - "그린카"
       - "타다"
       - "카카오T"
+      - "네이버지도"
+      - "티맵"
+      - "카카오내비"
+      - "KST모빌리티"
+      - "라스트마일"
+      # 일반
       - "모빌리티"
+      - "MaaS"
+      - "공유경제"
+      - "구독"
+      - "렌탈"
+
   - name: "Regulation"
     display_name: "규제/정책"
     keywords:
@@ -86,24 +163,48 @@ entities:
       - "면허"
       - "보험"
       - "도로교통법"
-      - "개인형 이동장치"
-      - "PM"
+      - "자동차관리법"
+      - "보조금"
+      - "세제혜택"
+      - "친환경차"
+      - "탄소중립"
+      - "배출가스"
+      - "무공해차"
+      - "ZEV"
+
   - name: "EVModel"
     display_name: "전기차 모델"
     keywords:
+      # 테슬라
       - "tesla"
+      - "테슬라"
       - "model 3"
       - "model y"
+      - "model s"
+      - "model x"
+      - "cybertruck"
+      # 현대기아
       - "아이오닉"
+      - "아이오닉5"
+      - "아이오닉6"
       - "EV6"
       - "EV9"
       - "니로"
+      - "코나일렉트릭"
+      # 기타 브랜드
       - "볼트"
       - "리프"
       - "폴스타"
       - "rivian"
       - "byd"
       - "lucid"
+      - "메르세데스EQ"
+      - "BMW i"
+      - "폭스바겐ID"
+      - "포드머스탱마하E"
+      - "쉐보레볼트"
+      - "GM울티엄"
+
   - name: "ChargingInfra"
     display_name: "충전 인프라"
     keywords:
@@ -111,8 +212,55 @@ entities:
       - "충전소"
       - "충전기"
       - "supercharger"
+      - "슈퍼차저"
       - "fast charging"
       - "급속충전"
       - "완속충전"
-      - "충전 네트워크"
-      - "전기차 충전"
+      - "초급속충전"
+      - "350kW"
+      - "충전네트워크"
+      - "전기차충전"
+      - "V2G"
+      - "양방향충전"
+      - "한국전력"
+      - "환경부충전소"
+      - "차지비"
+      - "에버온"
+      - "피앤이솔루션"
+      - "CCS"
+      - "차데모"
+
+  - name: "Manufacturer"
+    display_name: "제조사"
+    keywords:
+      # 한국
+      - "현대"
+      - "기아"
+      - "현대자동차"
+      - "기아자동차"
+      - "현대모비스"
+      # 미국
+      - "Tesla"
+      - "테슬라"
+      - "GM"
+      - "Ford"
+      - "Rivian"
+      - "Lucid"
+      # 유럽
+      - "폭스바겐"
+      - "BMW"
+      - "메르세데스"
+      - "벤츠"
+      - "아우디"
+      - "폴스타"
+      - "볼보"
+      # 중국
+      - "BYD"
+      - "비야디"
+      - "NIO"
+      - "Xpeng"
+      - "Li Auto"
+      # 일본
+      - "토요타"
+      - "혼다"
+      - "닛산"
