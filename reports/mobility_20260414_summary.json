@@ -7,7 +7,7 @@
   "top_entities": [
     {
       "name": "VehicleType",
-      "count": 95
+      "count": 94
     },
     {
       "name": "EVModel",
@@ -27,25 +27,25 @@
     },
     {
       "name": "Service",
-      "count": 6
+      "count": 8
     }
   ],
   "sources": {
     "환경부 전기차 충전소": 1,
     "서울 교통정보": 1,
     "r/electricscooters": 41,
-    "r/ebikes": 35,
-    "r/korea": 14,
+    "r/electricvehicles": 28,
+    "r/ebikes": 36,
+    "r/korea": 12,
     "r/Rivian": 28,
     "The Driven": 5,
     "InsideEVs": 5,
-    "r/electricvehicles": 28,
     "r/teslamotors": 3,
-    "CleanTechnica": 14,
+    "CleanTechnica": 15,
     "Electrek": 14,
     "r/SelfDrivingCars": 1,
     "Smart Cities Dive": 4,
     "Charged EVs": 6
   },
-  "generated_at": "2026-04-14T20:55:33.652939+09:00"
+  "generated_at": "2026-04-14T21:19:38.424074+09:00"
 }
