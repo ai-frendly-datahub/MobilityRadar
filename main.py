@@ -8,9 +8,15 @@ from typing import cast
 from mobilityradar.analyzer import apply_entity_rules
 from mobilityradar.collector import collect_sources
 from mobilityradar.common.validators import validate_article
-from mobilityradar.config_loader import load_category_config, load_settings
+from mobilityradar.config_loader import (
+    load_category_config,
+    load_category_quality_config,
+    load_settings,
+)
 from mobilityradar.date_storage import apply_date_storage_policy
+from mobilityradar.quality_report import build_quality_report, write_quality_report
 from mobilityradar.raw_logger import RawLogger
+from mobilityradar.relevance import apply_source_context_entities, filter_relevant_articles
 from mobilityradar.reporter import generate_index_html, generate_report
 from mobilityradar.search_index import SearchIndex
 from mobilityradar.storage import RadarStorage
@@ -87,6 +93,7 @@ def run(
     """Execute the lightweight collect -> analyze -> report pipeline."""
     settings = load_settings(config_path)
     category_cfg = load_category_config(category, categories_dir=categories_dir)
+    quality_cfg = load_category_quality_config(category, categories_dir=categories_dir)
 
     print(
         f"[Radar] Collecting '{category_cfg.display_name}' from {len(category_cfg.sources)} sources..."
@@ -105,11 +112,13 @@ def run(
             _ = raw_logger.log(source_articles, source_name=source.name)
 
     analyzed = apply_entity_rules(collected, category_cfg.entities)
+    classified = apply_source_context_entities(analyzed, category_cfg.sources)
+    scoped_articles = filter_relevant_articles(classified, category_cfg.sources)
 
     # Validate articles
     validated_articles = []
     validation_errors = []
-    for article in analyzed:
+    for article in scoped_articles:
         is_valid, validation_error_list = validate_article(article)
         if is_valid:
             validated_articles.append(article)
@@ -124,18 +133,30 @@ def run(
         for article in validated_articles:
             search_idx.upsert(article.link, article.title, article.summary)
 
-    recent_articles = storage.recent_articles(category_cfg.category_name, days=recent_days)
+    recent_articles = filter_relevant_articles(
+        apply_source_context_entities(
+            storage.recent_articles(category_cfg.category_name, days=recent_days, limit=1000),
+            category_cfg.sources,
+        ),
+        category_cfg.sources,
+    )
     storage.close()
 
     stats = {
         "sources": len(category_cfg.sources),
-        "collected": len(collected),
-        "matched": sum(1 for a in collected if a.matched_entities),
+        "collected": len(scoped_articles),
+        "matched": sum(1 for a in scoped_articles if a.matched_entities),
         "window_days": recent_days,
     }
 
     all_errors = errors + validation_errors
 
+    quality_report = build_quality_report(
+        category=category_cfg,
+        articles=recent_articles,
+        errors=all_errors,
+        quality_config=quality_cfg,
+    )
     output_path = settings.report_dir / f"{category_cfg.category_name}_report.html"
     _ = generate_report(
         category=category_cfg,
@@ -143,6 +164,12 @@ def run(
         output_path=output_path,
         stats=stats,
         errors=all_errors,
+        quality_report=quality_report,
+    )
+    quality_paths = write_quality_report(
+        quality_report,
+        output_dir=settings.report_dir,
+        category_name=category_cfg.category_name,
     )
     generate_index_html(settings.report_dir)
     date_storage = apply_date_storage_policy(
@@ -154,6 +181,7 @@ def run(
         snapshot_db=snapshot_db,
     )
     print(f"[Radar] Report generated at {output_path}")
+    print(f"[Radar] Quality report generated at {quality_paths['latest']}")
     snapshot_path = date_storage.get("snapshot_path")
     if isinstance(snapshot_path, str) and snapshot_path:
         print(f"[Radar] Snapshot saved at {snapshot_path}")
@@ -163,8 +191,8 @@ def run(
     _send_notifications(
         category_name=category_cfg.category_name,
         sources_count=len(category_cfg.sources),
-        collected_count=len(collected),
-        matched_count=sum(1 for a in collected if a.matched_entities),
+        collected_count=len(scoped_articles),
+        matched_count=sum(1 for a in scoped_articles if a.matched_entities),
         errors_count=len(all_errors),
         report_path=output_path,
     )

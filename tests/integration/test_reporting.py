@@ -86,9 +86,9 @@ def test_report_includes_regional_availability_section(
     )
 
     content = result.read_text(encoding="utf-8")
-    assert "Regional Mobility Availability" in content
-    assert "Korea Mobility Coverage" in content
-    assert "Region (시도)" in content
-    assert "서울특별시" in content
-    assert "부산광역시" in content
-    assert "경기도" in content
+    assert "모빌리티" in content
+    assert "Entity Distribution" in content
+    assert "Reading List" in content
+    assert "서울 공유자전거 이용 증가 추세" in content
+    assert "전기차 충전소 확대 계획 발표" in content
+    assert "entities_json_rows" not in content

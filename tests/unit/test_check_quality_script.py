@@ -1,0 +1,108 @@
+from __future__ import annotations
+
+import importlib.util
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+import yaml
+
+from mobilityradar.models import Article
+from mobilityradar.storage import RadarStorage
+
+
+def _load_script_module():
+    script_path = Path(__file__).resolve().parents[2] / "scripts" / "check_quality.py"
+    spec = importlib.util.spec_from_file_location("mobilityradar_check_quality_script", script_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_generate_quality_artifacts_uses_latest_stored_checkpoint(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    project_root = tmp_path
+    (project_root / "config" / "categories").mkdir(parents=True)
+
+    (project_root / "config" / "config.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "database_path": "data/radar_data.duckdb",
+                "report_dir": "reports",
+            },
+            allow_unicode=True,
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    (project_root / "config" / "categories" / "mobility.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "category_name": "mobility",
+                "display_name": "Mobility",
+                "domain_scope": "mobility",
+                "sources": [
+                    {
+                        "id": "bike_status",
+                        "name": "Bike Status",
+                        "type": "rss",
+                        "url": "https://example.com/mobility-feed.xml",
+                        "enabled": True,
+                        "content_type": "station_availability",
+                        "info_purpose": ["station_availability"],
+                        "config": {
+                            "domain_scope": "mobility",
+                            "event_model": "station_availability_snapshot",
+                        },
+                    }
+                ],
+                "entities": [],
+                "data_quality": {
+                    "tracked_event_models": ["station_availability_snapshot"],
+                    "freshness_sla": {"default_hours": 24},
+                },
+            },
+            allow_unicode=True,
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    article_time = datetime.now(UTC) - timedelta(days=30)
+    db_path = project_root / "data" / "radar_data.duckdb"
+    with RadarStorage(db_path) as storage:
+        storage.upsert_articles(
+            [
+                Article(
+                    title="Bike availability update",
+                    link="https://example.com/stations/1",
+                    summary=(
+                        "Station ID: station-1\n"
+                        "Station name: Riverside\n"
+                        "Availability status: available\n"
+                        "Observed at: 2026-03-20T08:00:00+00:00\n"
+                        "Location: Seoul"
+                    ),
+                    published=article_time,
+                    source="Bike Status",
+                    category="mobility",
+                    matched_entities={},
+                )
+            ]
+        )
+
+    module = _load_script_module()
+    paths, report = module.generate_quality_artifacts(project_root)
+
+    assert Path(paths["latest"]).exists()
+    assert Path(paths["dated"]).exists()
+    assert report["summary"]["tracked_sources"] == 1
+    assert report["summary"]["station_availability_snapshot_events"] == 1
+
+    module.PROJECT_ROOT = project_root
+    module.main()
+    captured = capsys.readouterr()
+    assert "quality_report=" in captured.out
+    assert "tracked_sources=1" in captured.out

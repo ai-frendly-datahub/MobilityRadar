@@ -1,0 +1,49 @@
+{
+  "date": "2026-04-14",
+  "category": "mobility",
+  "article_count": 16,
+  "source_count": 9,
+  "matched_count": 16,
+  "top_entities": [
+    {
+      "name": "SourceSignal",
+      "count": 22
+    },
+    {
+      "name": "VehicleType",
+      "count": 9
+    },
+    {
+      "name": "Service",
+      "count": 6
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 4
+    },
+    {
+      "name": "Manufacturer",
+      "count": 2
+    },
+    {
+      "name": "Regulation",
+      "count": 1
+    },
+    {
+      "name": "EVModel",
+      "count": 1
+    }
+  ],
+  "sources": {
+    "서울 교통정보": 1,
+    "서울 따릉이": 5,
+    "The Driven": 3,
+    "InsideEVs": 1,
+    "CleanTechnica": 2,
+    "Automotive News": 1,
+    "조선비즈": 1,
+    "Electrek": 1,
+    "r/SelfDrivingCars": 1
+  },
+  "generated_at": "2026-04-14T20:24:56.644463+09:00"
+}

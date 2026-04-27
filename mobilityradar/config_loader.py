@@ -52,6 +52,39 @@ def _dict_items(value: object) -> list[dict[str, object]]:
     return items
 
 
+def _dict_value(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        return {}
+    value_dict = cast(dict[object, object], value)
+    return {str(k): v for k, v in value_dict.items()}
+
+
+def _string_list_value(raw: dict[str, object], key: str) -> list[str]:
+    value = raw.get(key)
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in cast(list[object], value) if str(item).strip()]
+
+
+def _bool_value(raw: dict[str, object], key: str, default: bool) -> bool:
+    value = raw.get(key)
+    if isinstance(value, bool):
+        return value
+    return default
+
+
+def _float_value(raw: dict[str, object], key: str, default: float) -> float:
+    value = raw.get(key)
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return default
+    return default
+
+
 def load_settings(config_path: Path | None = None) -> RadarSettings:
     """Load global radar settings such as database and report directories."""
     project_root = Path(__file__).resolve().parent.parent
@@ -83,15 +116,12 @@ def load_settings(config_path: Path | None = None) -> RadarSettings:
 
 def load_category_config(category_name: str, categories_dir: Path | None = None) -> CategoryConfig:
     """Load a category YAML and parse it into a CategoryConfig object."""
-    project_root = Path(__file__).resolve().parent.parent
-    base_dir = categories_dir or project_root / "config" / "categories"
-    config_file = Path(base_dir) / f"{category_name}.yaml"
-
-    if not config_file.exists():
-        raise FileNotFoundError(f"Category config not found: {config_file}")
-
-    raw = _read_yaml_dict(config_file)
-    sources = [_parse_source(entry) for entry in _dict_items(raw.get("sources"))]
+    raw = _read_yaml_dict(_category_file(category_name, categories_dir=categories_dir))
+    domain_scope = _string_value(raw, "domain_scope", category_name)
+    sources = [
+        _parse_source(entry, default_domain_scope=domain_scope)
+        for entry in _dict_items(raw.get("sources"))
+    ]
     entities = [_parse_entity(entry) for entry in _dict_items(raw.get("entities"))]
 
     display_name = (
@@ -108,13 +138,67 @@ def load_category_config(category_name: str, categories_dir: Path | None = None)
     )
 
 
-def _parse_source(entry: dict[str, object]) -> Source:
+def _category_file(category_name: str, categories_dir: Path | None = None) -> Path:
+    project_root = Path(__file__).resolve().parent.parent
+    base_dir = categories_dir or project_root / "config" / "categories"
+    config_file = Path(base_dir) / f"{category_name}.yaml"
+    if not config_file.exists():
+        raise FileNotFoundError(f"Category config not found: {config_file}")
+    return config_file
+
+
+def load_category_quality_config(
+    category_name: str,
+    categories_dir: Path | None = None,
+) -> dict[str, object]:
+    raw = _read_yaml_dict(_category_file(category_name, categories_dir=categories_dir))
+    quality_config: dict[str, object] = {}
+    for key in ("data_quality", "source_backlog", "integration_candidates"):
+        if key in raw:
+            quality_config[key] = _resolve_env_refs(raw[key])
+    return quality_config
+
+
+def _parse_source(entry: dict[str, object], *, default_domain_scope: str = "") -> Source:
     if not entry:
         raise ValueError("Empty source entry in category config")
+    source_config = _dict_value(entry.get("config"))
+    domain_scope = _string_value(entry, "domain_scope", default_domain_scope)
+    if domain_scope:
+        source_config.setdefault("domain_scope", domain_scope)
+    for key in (
+        "event_model",
+        "verification_role",
+        "observed_date_field",
+        "event_date_field",
+        "merge_policy",
+    ):
+        value = entry.get(key)
+        if isinstance(value, str) and value.strip():
+            source_config.setdefault(key, value)
+    canonical_key_fields = entry.get("canonical_key_fields")
+    if isinstance(canonical_key_fields, list):
+        source_config.setdefault(
+            "canonical_key_fields",
+            [str(item) for item in cast(list[object], canonical_key_fields)],
+        )
     return Source(
         name=_string_value(entry, "name", "Unnamed Source"),
         type=_string_value(entry, "type", "rss"),
         url=_string_value(entry, "url", ""),
+        id=_string_value(entry, "id", ""),
+        enabled=_bool_value(entry, "enabled", True),
+        language=_string_value(entry, "language", ""),
+        country=_string_value(entry, "country", ""),
+        region=_string_value(entry, "region", ""),
+        trust_tier=_string_value(entry, "trust_tier", "T3_professional"),
+        weight=_float_value(entry, "weight", 1.0),
+        content_type=_string_value(entry, "content_type", "news"),
+        collection_tier=_string_value(entry, "collection_tier", "C1_rss"),
+        producer_role=_string_value(entry, "producer_role", ""),
+        info_purpose=_string_list_value(entry, "info_purpose"),
+        notes=_string_value(entry, "notes", ""),
+        config=source_config,
     )
 
 

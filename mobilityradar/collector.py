@@ -19,6 +19,7 @@ from radar_core import AdaptiveThrottler, CrawlHealthStore
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from .collectors.citybikes_collector import collect_citybikes
 from .exceptions import NetworkError, ParseError, SourceError
 from .models import Article, Source
 from .resilience import get_circuit_breaker_manager
@@ -174,6 +175,15 @@ def _parse_retry_after(value: str | None) -> int | str | None:
     return stripped
 
 
+def _source_bool(source: Source, key: str) -> bool:
+    value = source.config.get(key)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+    return False
+
+
 def collect_sources(
     sources: list[Source],
     *,
@@ -189,25 +199,40 @@ def collect_sources(
     errors: list[str] = []
     manager = get_circuit_breaker_manager()
     workers = _resolve_max_workers(max_workers)
+    resolved_health_db_path = health_db_path or os.environ.get(
+        "RADAR_CRAWL_HEALTH_DB_PATH", _DEFAULT_HEALTH_DB_PATH
+    )
+    enabled_sources = [source for source in sources if source.enabled]
+    _js_types = {"javascript", "browser", "html", "js", "web"}
+    _standard_types = {"rss", "citybikes", "citybikes_api"}
+    standard_sources = [
+        s for s in enabled_sources if s.type.lower() in _standard_types
+    ]
+    js_sources = [s for s in enabled_sources if s.type.lower() in _js_types]
+    unsupported_sources = [
+        s for s in enabled_sources if s.type.lower() not in {*_standard_types, *_js_types}
+    ]
+    errors.extend(
+        f"{source.name}: Unsupported source type '{source.type}'"
+        for source in unsupported_sources
+    )
     source_hosts: dict[str, str] = {
-        source.name: (urlparse(source.url).netloc.lower() or source.name) for source in sources
+        source.name: (urlparse(source.url).netloc.lower() or source.name)
+        for source in standard_sources
     }
     rate_limiters: dict[str, RateLimiter] = {
         host: RateLimiter(min_interval=min_interval_per_host) for host in set(source_hosts.values())
     }
     throttler = AdaptiveThrottler(min_delay=max(0.001, min_interval_per_host))
-    health_store = CrawlHealthStore(
-        health_db_path or os.environ.get("RADAR_CRAWL_HEALTH_DB_PATH", _DEFAULT_HEALTH_DB_PATH)
-    )
+    health_store = CrawlHealthStore(resolved_health_db_path)
     _set_collection_controls(throttler, health_store)
     session = _create_session()
 
-    _js_types = {"javascript", "browser"}
-    rss_sources = [s for s in sources if s.type.lower() not in _js_types]
-    js_sources = [s for s in sources if s.type.lower() in _js_types]
-
     def _collect_for_source(source: Source) -> tuple[list[Article], list[str]]:
-        if health_store.is_disabled(source.name):
+        if (
+            not _source_bool(source, "bypass_crawl_health")
+            and health_store.is_disabled(source.name)
+        ):
             return [], [f"{source.name}: Source disabled (crawl health threshold reached)"]
 
         host = source_hosts[source.name]
@@ -235,26 +260,33 @@ def collect_sources(
 
     try:
         if workers == 1:
-            for source in rss_sources:
+            for source in standard_sources:
                 source_articles, source_errors = _collect_for_source(source)
                 articles.extend(source_articles)
                 errors.extend(source_errors)
         else:
-            with ThreadPoolExecutor(max_workers=workers) as executor:
-                future_map: list[Future[tuple[list[Article], list[str]]]] = [
-                    executor.submit(_collect_for_source, source) for source in rss_sources
-                ]
+            if standard_sources:
+                with ThreadPoolExecutor(max_workers=workers) as executor:
+                    future_map: list[Future[tuple[list[Article], list[str]]]] = [
+                        executor.submit(_collect_for_source, source)
+                        for source in standard_sources
+                    ]
 
-                for future in future_map:
-                    source_articles, source_errors = future.result()
-                    articles.extend(source_articles)
-                    errors.extend(source_errors)
+                    for future in future_map:
+                        source_articles, source_errors = future.result()
+                        articles.extend(source_articles)
+                        errors.extend(source_errors)
 
         if js_sources:
             try:
                 from .browser_collector import collect_browser_sources
 
-                js_articles, js_errors = collect_browser_sources(js_sources, category)
+                js_articles, js_errors = collect_browser_sources(
+                    js_sources,
+                    category,
+                    timeout=max(1_000, timeout * 1_000),
+                    health_db_path=resolved_health_db_path,
+                )
                 articles.extend(js_articles)
                 errors.extend(js_errors)
             except ImportError:
@@ -279,7 +311,16 @@ def _collect_single(
     timeout: int,
     session: requests.Session | None = None,
 ) -> list[Article]:
-    if source.type.lower() != "rss":
+    source_type = source.type.lower()
+    if source_type in {"citybikes", "citybikes_api"}:
+        try:
+            return collect_citybikes(source, category=category, limit=limit, timeout=timeout)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            raise NetworkError(f"Network error fetching {source.name}: {exc}") from exc
+        except requests.exceptions.RequestException as exc:
+            raise SourceError(source.name, f"Request failed: {exc}", exc) from exc
+
+    if source_type != "rss":
         raise SourceError(source.name, f"Unsupported source type '{source.type}'")
 
     try:
@@ -311,6 +352,8 @@ def _collect_single(
                             summary = value
 
             title = html.unescape(_entry_text(entry, "title").strip()) or "(no title)"
+            if not summary:
+                summary = title
             link = _entry_text(entry, "link").strip()
 
             # Skip entries with empty title or link

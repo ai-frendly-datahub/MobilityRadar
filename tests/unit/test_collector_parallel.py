@@ -6,6 +6,7 @@ import time
 from unittest.mock import Mock, patch
 
 import pytest
+from radar_core import CrawlHealthStore
 
 from mobilityradar.collector import RateLimiter, collect_sources
 from mobilityradar.exceptions import NetworkError, SourceError
@@ -207,3 +208,78 @@ def test_max_workers_is_capped_and_validated(env_value: str, expected_workers: i
         mock_executor.assert_not_called()
     else:
         mock_executor.assert_called_once_with(max_workers=expected_workers)
+
+
+def test_collect_sources_can_bypass_crawl_health(tmp_path) -> None:
+    health_db = tmp_path / "health.duckdb"
+    with CrawlHealthStore(str(health_db), failure_threshold=1) as store:
+        store.record_failure("rss", error="previous outage", delay=1.0)
+
+    source = Source(
+        name="rss",
+        type="rss",
+        url="https://example.com/feed",
+        config={"bypass_crawl_health": True},
+    )
+    article = Article(
+        title="rss-article",
+        link="https://example.com/rss-article",
+        summary="rss",
+        published=None,
+        source="rss",
+        category="test",
+    )
+    manager = _pass_through_manager()
+
+    with (
+        patch("radar.collector._collect_single", return_value=[article]) as mock_collect,
+        patch("radar.collector.get_circuit_breaker_manager", return_value=manager),
+    ):
+        articles, errors = collect_sources(
+            [source],
+            category="test",
+            min_interval_per_host=0.0,
+            max_workers=1,
+            health_db_path=str(health_db),
+        )
+
+    assert articles == [article]
+    assert errors == []
+    assert mock_collect.call_count == 1
+
+
+def test_collect_sources_routes_citybikes_source() -> None:
+    source = Source(
+        name="서울 따릉이",
+        type="citybikes",
+        url="https://api.citybik.es/v2/networks/seoul-bike",
+    )
+    article = Article(
+        title="station availability",
+        link="https://api.citybik.es/v2/networks/seoul-bike#station-1",
+        summary="available",
+        published=None,
+        source="서울 따릉이",
+        category="mobility",
+    )
+    manager = _pass_through_manager()
+
+    with (
+        patch("radar.collector.collect_citybikes", return_value=[article]) as mock_citybikes,
+        patch("radar.collector.get_circuit_breaker_manager", return_value=manager),
+    ):
+        articles, errors = collect_sources(
+            [source],
+            category="mobility",
+            min_interval_per_host=0.0,
+            max_workers=1,
+        )
+
+    assert articles == [article]
+    assert errors == []
+    mock_citybikes.assert_called_once_with(
+        source,
+        category="mobility",
+        limit=30,
+        timeout=15,
+    )

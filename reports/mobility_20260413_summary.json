@@ -1,0 +1,33 @@
+{
+  "date": "2026-04-13",
+  "category": "mobility",
+  "article_count": 9,
+  "source_count": 5,
+  "matched_count": 9,
+  "top_entities": [
+    {
+      "name": "SourceSignal",
+      "count": 22
+    },
+    {
+      "name": "Service",
+      "count": 5
+    },
+    {
+      "name": "VehicleType",
+      "count": 3
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 1
+    }
+  ],
+  "sources": {
+    "서울 교통정보": 1,
+    "서울 따릉이": 5,
+    "CleanTechnica": 1,
+    "Automotive News": 1,
+    "Everything Electric CARS": 1
+  },
+  "generated_at": "2026-04-13T20:57:41.996142+09:00"
+}

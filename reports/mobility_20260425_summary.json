@@ -1,0 +1,91 @@
+{
+  "date": "2026-04-25",
+  "category": "mobility",
+  "article_count": 112,
+  "source_count": 16,
+  "matched_count": 112,
+  "top_entities": [
+    {
+      "name": "VehicleType",
+      "count": 69
+    },
+    {
+      "name": "EVModel",
+      "count": 63
+    },
+    {
+      "name": "Manufacturer",
+      "count": 59
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 36
+    },
+    {
+      "name": "SourceSignal",
+      "count": 22
+    },
+    {
+      "name": "Service",
+      "count": 10
+    },
+    {
+      "name": "Regulation",
+      "count": 8
+    }
+  ],
+  "sources": {
+    "서울 교통정보": 1,
+    "서울 따릉이": 5,
+    "CleanTechnica": 5,
+    "r/electricvehicles": 9,
+    "Automotive News": 4,
+    "r/ebikes": 6,
+    "r/electricscooters": 7,
+    "Electrek": 13,
+    "r/Rivian": 12,
+    "r/teslamotors": 8,
+    "Charged EVs": 10,
+    "r/SelfDrivingCars": 9,
+    "InsideEVs": 8,
+    "The Driven": 11,
+    "Out of Spec Reviews": 2,
+    "Everything Electric CARS": 2
+  },
+  "generated_at": "2026-04-25T20:36:50.742420+09:00",
+  "ontology": {
+    "repo": "MobilityRadar",
+    "category": "mobility",
+    "ontology_version": "0.1.0",
+    "event_model_ids": [
+      "mobility.charger_availability_snapshot",
+      "mobility.fare_payment_policy_change",
+      "mobility.station_availability_snapshot",
+      "mobility.transport_service_notice"
+    ],
+    "event_model_mappings": {
+      "station_availability_snapshot": "mobility.station_availability_snapshot",
+      "charger_availability_snapshot": "mobility.charger_availability_snapshot",
+      "transport_service_notice": "mobility.transport_service_notice",
+      "fare_payment_policy_change": "mobility.fare_payment_policy_change"
+    },
+    "entity_type_hints": [
+      "mobility.station",
+      "organization.agency"
+    ],
+    "source_role_ids": [
+      "context_only",
+      "primary_evidence"
+    ],
+    "source_role_mappings": {
+      "서울 따릉이": "primary_evidence",
+      "서울 교통정보": "primary_evidence",
+      "전자신문 모빌리티": "context_only",
+      "Electrek": "context_only"
+    },
+    "evidence_policy_ids": [
+      "traceable_url_required",
+      "official_confirmation_required"
+    ]
+  }
+}

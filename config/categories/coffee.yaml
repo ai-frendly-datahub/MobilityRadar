@@ -1,16 +1,58 @@
 category_name: "coffee"
 display_name: "Coffee Radar"
+domain_scope: "coffee"
+scope_status: "split_candidate"
+notes: "Kept as a split candidate so coffee signals cannot be mixed into mobility scoring."
+
+data_quality:
+  priority: P1
+  primary_motion: intelligence
+  scope_policy:
+    primary_domain: coffee
+    split_candidate_from: mobility
+    required_source_config_key: domain_scope
+  quality_gates:
+    - 모든 source는 coffee domain_scope를 가진다
+    - mobility 운영 score에는 coffee source를 병합하지 않는다
+
+source_backlog:
+  split_decision_candidates:
+    - id: coffee_standalone_radar_decision
+      name: CoffeeRadar split decision
+      reason: "MobilityRadar 운영 점수와 coffee market signal을 분리할지 결정하기 위한 backlog."
+      required_before_enable: [domain_scope_review, dashboard_slot_decision, taxonomy_entry]
 
 sources:
   - name: "Perfect Daily Grind"
     type: "rss"
     url: "https://perfectdailygrind.com/feed/"
+    domain_scope: "coffee"
+    trust_tier: "T2_trade_media"
+    content_type: "coffee_market_news"
+    producer_role: "trade_media"
+    info_purpose:
+      - "coffee"
+      - "market_context"
   - name: "Daily Coffee News"
     type: "rss"
     url: "https://dailycoffeenews.com/feed/"
+    domain_scope: "coffee"
+    trust_tier: "T2_trade_media"
+    content_type: "coffee_market_news"
+    producer_role: "trade_media"
+    info_purpose:
+      - "coffee"
+      - "market_context"
   - name: "Sprudge"
     type: "rss"
     url: "https://sprudge.com/feed"
+    domain_scope: "coffee"
+    trust_tier: "T2_trade_media"
+    content_type: "coffee_market_news"
+    producer_role: "trade_media"
+    info_purpose:
+      - "coffee"
+      - "market_context"
 
 entities:
   - name: "Region"
