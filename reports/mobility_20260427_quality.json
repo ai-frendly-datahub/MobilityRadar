@@ -1,6 +1,6 @@
 {
   "category": "mobility",
-  "generated_at": "2026-04-28T00:40:59.572419+00:00",
+  "generated_at": "2026-04-27T23:44:56.739021+00:00",
   "scope_note": "Operational station, charger, transport notice, and fare/payment sources are tracked separately from broad EV/media/community context. Coffee split-candidate sources are excluded by domain_scope.",
   "summary": {
     "total_sources": 29,
@@ -399,7 +399,7 @@
       "article_count": 5,
       "event_count": 5,
       "latest_event_at": "2026-04-25T11:36:35.584771+00:00",
-      "age_days": 2.54,
+      "age_days": 2.51,
       "latest_title": "5880. 국회박물관 station availability - Seoul Bike 따릉이",
       "latest_url": "https://api.citybik.es/v2/networks/seoul-bike#station-0089476ff805370ca0abc9bbb55e3e1a",
       "latest_source_signal": [
@@ -434,7 +434,7 @@
       "article_count": 1,
       "event_count": 1,
       "latest_event_at": "2026-04-25T11:36:42.395885+00:00",
-      "age_days": 2.54,
+      "age_days": 2.51,
       "latest_title": "교통량 정보 | 서울시 교통정보 시스템 - TOPIS",
       "latest_url": "https://topis.seoul.go.kr/refRoom/openRefRoom_2.do",
       "latest_source_signal": [
