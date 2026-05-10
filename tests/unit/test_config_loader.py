@@ -80,3 +80,15 @@ entities: []
     assert quality["source_backlog"] == {
         "operational_candidates": [{"id": "charger_availability_api"}]
     }
+
+
+def test_real_mobility_config_disables_unstable_youtube_rss_sources() -> None:
+    config = load_category_config("mobility")
+    sources = {source.name: source for source in config.sources}
+
+    for source_name in ("Everything Electric CARS", "Out of Spec Reviews"):
+        source = sources[source_name]
+        assert source.enabled is False
+        assert "2026-04-30" in source.notes
+        assert "404" in source.notes
+        assert "parser smoke passes" in source.config["reenable_gate"]

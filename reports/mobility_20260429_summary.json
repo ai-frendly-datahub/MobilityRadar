@@ -1,0 +1,86 @@
+{
+  "date": "2026-04-29",
+  "category": "mobility",
+  "article_count": 12,
+  "source_count": 8,
+  "matched_count": 12,
+  "top_entities": [
+    {
+      "name": "SourceSignal",
+      "count": 22
+    },
+    {
+      "name": "Service",
+      "count": 6
+    },
+    {
+      "name": "VehicleType",
+      "count": 4
+    },
+    {
+      "name": "Manufacturer",
+      "count": 4
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 3
+    },
+    {
+      "name": "EVModel",
+      "count": 2
+    }
+  ],
+  "sources": {
+    "서울 교통정보": 1,
+    "서울 따릉이": 5,
+    "CleanTechnica": 1,
+    "Electrek": 1,
+    "Charged EVs": 1,
+    "Out of Spec Reviews": 1,
+    "The Driven": 1,
+    "Everything Electric CARS": 1
+  },
+  "generated_at": "2026-04-29T00:00:09.695338+09:00",
+  "articles": [
+    {
+      "event_model_payload": {
+        "source_url": "https://topis.seoul.go.kr/refRoom/openRefRoom_2.do"
+      }
+    }
+  ],
+  "ontology": {
+    "repo": "MobilityRadar",
+    "category": "mobility",
+    "ontology_version": "0.1.0",
+    "event_model_ids": [
+      "mobility.charger_availability_snapshot",
+      "mobility.fare_payment_policy_change",
+      "mobility.station_availability_snapshot",
+      "mobility.transport_service_notice"
+    ],
+    "event_model_mappings": {
+      "station_availability_snapshot": "mobility.station_availability_snapshot",
+      "charger_availability_snapshot": "mobility.charger_availability_snapshot",
+      "transport_service_notice": "mobility.transport_service_notice",
+      "fare_payment_policy_change": "mobility.fare_payment_policy_change"
+    },
+    "entity_type_hints": [
+      "mobility.station",
+      "organization.agency"
+    ],
+    "source_role_ids": [
+      "context_only",
+      "primary_evidence"
+    ],
+    "source_role_mappings": {
+      "서울 따릉이": "primary_evidence",
+      "서울 교통정보": "primary_evidence",
+      "전자신문 모빌리티": "context_only",
+      "Electrek": "context_only"
+    },
+    "evidence_policy_ids": [
+      "traceable_url_required",
+      "official_confirmation_required"
+    ]
+  }
+}

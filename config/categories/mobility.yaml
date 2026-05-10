@@ -314,20 +314,32 @@ sources:
   - name: "Everything Electric CARS"
     type: "rss"
     url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCzz4CoEgSgWNs9ZAvRMhW2A"
-    notes: "2026-04-13 검증: 기존 Fully Charged channel_id는 404. YouTube canonical RSS가 Everything Electric CARS로 반환됨."
+    enabled: false
+    notes: "2026-04-30 검증: canonical channel page는 열리지만 YouTube channel RSS가 404를 반환함. 활성 RSS/API 대체 경로 확인 전 비활성 backlog로 유지."
     config:
       bypass_crawl_health: true
+      skip_reason: "YouTube channel RSS returned 404 during bounded smoke refresh."
+      reenable_gate: "Re-enable only after the channel RSS or approved API feed returns 200 and parser smoke passes."
 
   - name: "Out of Spec Reviews"
     type: "rss"
     url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVRZKu68-4tQIk7_3CJ_wKA"
-    notes: "2026-04-13 검증: 기존 channel_id는 404. @OutofSpecReviews canonical RSS channel_id로 교체."
+    enabled: false
+    notes: "2026-04-30 검증: @OutofSpecReviews canonical channel page는 열리지만 YouTube channel RSS가 404를 반환함. 활성 RSS/API 대체 경로 확인 전 비활성 backlog로 유지."
     config:
       bypass_crawl_health: true
+      skip_reason: "YouTube channel RSS returned 404 during bounded smoke refresh."
+      reenable_gate: "Re-enable only after the channel RSS or approved API feed returns 200 and parser smoke passes."
 
   - name: "Transport Evolved"
     type: "rss"
     url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC3HjB3X8jeENm46HCkI0Inw"
+    enabled: false
+    notes: "2026-05-07 verification: YouTube channel RSS intermittently returns 404 during collector smoke despite direct probes sometimes returning 200; keep as backlog until a stable feed/API path is verified."
+    config:
+      bypass_crawl_health: true
+      skip_reason: "YouTube channel RSS returned 404 during bounded smoke refresh."
+      reenable_gate: "Re-enable only after the channel RSS or approved API feed returns stable 200 responses and parser smoke passes."
 
   # === 국제 모빌리티 뉴스 ===
   - name: "The Mobility House"
