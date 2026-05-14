@@ -1,5 +1,54 @@
 category_name: "mobility"
 display_name: "Mobility Radar"
+data_quality:
+  priority: P1
+  primary_motion: intelligence
+  weakest_dimension: operational_depth
+  quality_outputs:
+    freshness_report: reports/mobility_quality.json
+    dated_freshness_report_pattern: reports/mobility_YYYYMMDD_quality.json
+    tracked_event_models:
+      - mobility_market_signal
+      - public_transport_status
+      - charging_infrastructure_signal
+      - mobility_regulation_notice
+  event_models:
+    mobility_market_signal:
+      fields: [provider, vehicle_type, market, signal_type, published_at, source_url]
+      notes: EV, micromobility, MaaS, and autonomous-service market movement.
+    public_transport_status:
+      fields: [operator, route_or_station, status_type, observed_at, source_url]
+      notes: Bike-share, transit, and city mobility operational status evidence.
+    charging_infrastructure_signal:
+      fields: [operator, location, charger_type, availability_or_expansion_signal, observed_at, source_url]
+      notes: EV charging availability, deployment, and reliability signals.
+    mobility_regulation_notice:
+      fields: [jurisdiction, rule_topic, affected_vehicle_type, effective_date, source_url]
+      notes: Safety, insurance, access, and micromobility policy changes.
+  canonical_keys:
+    mobility_service: [provider, market, vehicle_type]
+    station_or_route: [operator, route_or_station, location]
+    regulation: [jurisdiction, rule_topic, effective_date]
+  freshness_sla:
+    mobility_market_signal_days: 7
+    public_transport_status_days: 2
+    charging_infrastructure_signal_days: 7
+    mobility_regulation_notice_days: 14
+  quality_gates:
+    - Separate editorial EV market coverage from operational station/route status.
+    - Keep jurisdiction and effective date on regulation notices before action scoring.
+    - Do not merge provider-level market news with station-level availability evidence.
+source_backlog:
+  operational_candidates:
+    - id: seoul_openapi_bike_station_status
+      name: Seoul OpenAPI bike station status
+      activation_gate: API key coverage, station canonicalization, and rate-limit policy.
+    - id: ev_charger_realtime_api
+      name: EV charger realtime/open data feed
+      activation_gate: charger id mapping, stale status handling, and regional coverage review.
+    - id: transport_policy_notice_feeds
+      name: City transport policy notice feeds
+      activation_gate: jurisdiction taxonomy and effective-date parser smoke.
 
 sources:
   # === 글로벌 EV/모빌리티 뉴스 ===

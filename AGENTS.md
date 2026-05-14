@@ -22,7 +22,7 @@ MobilityRadar/
 │   └── mcp_server/               # MCP 서버 (server.py + tools.py)
 ├── config/
 │   ├── config.yaml               # database_path, report_dir, raw_data_dir, search_db_path
-│   └── categories/{domain}.yaml  # 소스 + 엔티티 정의
+│   └── categories/mobility.yaml  # 소스 + 엔티티 정의
 ├── data/                         # DuckDB, search_index.db, raw/ JSONL
 ├── reports/                      # 생성된 HTML 리포트
 ├── tests/unit/                   # pytest 단위 테스트
@@ -34,14 +34,16 @@ MobilityRadar/
 
 | Entity | Examples |
 |--------|----------|
-| 주요 엔티티 1 | 예시 1, 예시 2, 예시 3 |
-| 주요 엔티티 2 | 예시 4, 예시 5, 예시 6 |
-| 주요 엔티티 3 | 예시 7, 예시 8, 예시 9 |
+| VehicleType | EV, e-scooter, ebike, 자율주행 |
+| Service | Lime, Bird, Uber, 공유자전거 |
+| ChargingInfra | 충전소, charger, supercharger |
+| Regulation | safety, helmet, speed limit, 규제 |
 
 ## DEVIATIONS FROM TEMPLATE
 
-- 표준 템플릿 대비 특화 기능 1
-- 표준 템플릿 대비 특화 기능 2
+- EV, 마이크로모빌리티, 공유 이동 서비스, 교통 정책 source를 함께 추적한다.
+- 공공 교통/충전 인프라 JavaScript source는 selector 안정성 확인 전 확대하지 않는다.
+- 차량·서비스·규제·충전 인프라 엔티티를 분리해 리포트한다.
 
 ## COMMANDS
 
