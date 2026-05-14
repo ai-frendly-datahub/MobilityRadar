@@ -1,9 +1,9 @@
 {
   "date": "2026-05-14",
   "category": "mobility",
-  "article_count": 111,
+  "article_count": 110,
   "source_count": 12,
-  "matched_count": 111,
+  "matched_count": 110,
   "top_entities": [
     {
       "name": "VehicleType",
@@ -11,11 +11,11 @@
     },
     {
       "name": "EVModel",
-      "count": 52
+      "count": 51
     },
     {
       "name": "Manufacturer",
-      "count": 50
+      "count": 49
     },
     {
       "name": "ChargingInfra",
@@ -34,7 +34,7 @@
     "환경부 전기차 충전소": 1,
     "r/ebikes": 18,
     "r/electricscooters": 21,
-    "r/Rivian": 29,
+    "r/Rivian": 28,
     "r/electricvehicles": 9,
     "r/teslamotors": 4,
     "CleanTechnica": 7,
@@ -44,5 +44,5 @@
     "r/SelfDrivingCars": 3,
     "The Driven": 4
   },
-  "generated_at": "2026-05-14T16:38:14.711248+09:00"
+  "generated_at": "2026-05-14T16:47:55.340478+09:00"
 }
