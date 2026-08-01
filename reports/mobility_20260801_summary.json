@@ -1,0 +1,44 @@
+{
+  "date": "2026-08-01",
+  "category": "mobility",
+  "article_count": 77,
+  "source_count": 8,
+  "matched_count": 77,
+  "top_entities": [
+    {
+      "name": "VehicleType",
+      "count": 62
+    },
+    {
+      "name": "Manufacturer",
+      "count": 53
+    },
+    {
+      "name": "EVModel",
+      "count": 46
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 30
+    },
+    {
+      "name": "Regulation",
+      "count": 6
+    },
+    {
+      "name": "Service",
+      "count": 4
+    }
+  ],
+  "sources": {
+    "환경부 전기차 충전소": 1,
+    "r/electricvehicles": 18,
+    "The Driven": 4,
+    "CleanTechnica": 11,
+    "Electrek": 22,
+    "InsideEVs": 14,
+    "Smart Cities Dive": 1,
+    "Charged EVs": 6
+  },
+  "generated_at": "2026-08-01T16:23:45.756590+09:00"
+}
