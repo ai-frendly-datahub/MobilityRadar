@@ -15,8 +15,13 @@ from radar_core.exceptions import (
 )
 
 
+class EmptyCollectionError(CollectionError):
+    """Enabled sources produced no articles. An empty run is not success."""
+
+
 __all__ = [
     "CollectionError",
+    "EmptyCollectionError",
     "ConfigError",
     "NetworkError",
     "NotificationError",
