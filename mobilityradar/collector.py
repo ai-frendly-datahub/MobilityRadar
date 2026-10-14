@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import html
 import os
+import re
 import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -19,15 +20,25 @@ from radar_core import AdaptiveThrottler, CrawlHealthStore
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from .collectors.citybikes_collector import collect_citybikes
+from .common.validators import is_challenge_or_error_page
 from .exceptions import NetworkError, ParseError, SourceError
 from .models import Article, Source
+from .raw_logger import RawLogger
 from .resilience import get_circuit_breaker_manager
-
 
 logger = structlog.get_logger(__name__)
 
+# Identifying client name. Public feeds may reject the default python-requests
+# agent. This is a fixed product name, not a browser impersonation list.
+MOBILITY_RADAR_USER_AGENT = (
+    "MobilityRadar/0.1 (+https://github.com/ai-frendly-datahub/MobilityRadar; public-rss)"
+)
+RSS_TIMEOUT_SECONDS = 45
+_ENV_VAR_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _DEFAULT_HEADERS: dict[str, str] = {
-    "User-Agent": "Mozilla/5.0 (compatible; RadarTemplateBot/1.0; +https://github.com/zzragida/ai-frendly-datahub)",
+    "User-Agent": MOBILITY_RADAR_USER_AGENT,
+    "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, application/json, */*",
 }
 _DEFAULT_HEALTH_DB_PATH = "data/radar_data.duckdb"
 _COLLECTION_CONTROL_LOCK = threading.Lock()
@@ -84,7 +95,8 @@ def _resolve_max_workers(max_workers: int | None = None) -> int:
 
 def _create_session() -> requests.Session:
     session = requests.Session()
-    session.headers.update(_DEFAULT_HEADERS)
+    session.verify = True
+    session.headers.update(dict(_DEFAULT_HEADERS))
 
     retry_strategy = Retry(
         total=3,
@@ -111,7 +123,13 @@ def _fetch_url_with_retry(
     max_attempts: int = 3,
 ) -> requests.Response:
     """Fetch URL with retry logic on transient errors."""
-    merged = {**_DEFAULT_HEADERS, **(headers or {})}
+    merged = dict(_DEFAULT_HEADERS)
+    if headers:
+        for key, value in headers.items():
+            if key.lower() == "user-agent":
+                continue
+            merged[key] = value
+    merged["User-Agent"] = MOBILITY_RADAR_USER_AGENT
     if throttler is None or health_store is None:
         active_throttler, active_health_store = _get_collection_controls()
         throttler = throttler or active_throttler
@@ -129,9 +147,9 @@ def _fetch_url_with_retry(
 
         try:
             if session is not None:
-                response = session.get(url, timeout=timeout, headers=merged)
+                response = session.get(url, timeout=timeout, headers=merged, verify=True)
             else:
-                response = requests.get(url, timeout=timeout, headers=merged)
+                response = requests.get(url, timeout=timeout, headers=merged, verify=True)
             response.raise_for_status()
 
             if source_name is not None and throttler is not None:
@@ -174,17 +192,76 @@ def _parse_retry_after(value: str | None) -> int | str | None:
     return stripped
 
 
+def _env_var_names(value: object) -> list[str]:
+    raw_names: list[str] = []
+    if isinstance(value, str):
+        raw_names = [value]
+    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        raw_names = [str(item) for item in value]
+    names: list[str] = []
+    for item in raw_names:
+        candidate = item.strip()
+        if not candidate:
+            continue
+        if _ENV_VAR_NAME.fullmatch(candidate) is None:
+            raise ValueError("required_env must be an environment variable name")
+        names.append(candidate)
+    return names
+
+
+def missing_required_env(source: Source) -> list[str]:
+    """Return required env var names that are unset. Values are never returned."""
+    configured = source.config.get("required_env", source.config.get("required_env_vars"))
+    missing: list[str] = []
+    for name in _env_var_names(configured):
+        if not os.environ.get(name, "").strip():
+            missing.append(name)
+    return missing
+
+
+def emit_missing_secret_warning(source_name: str, env_names: str | Sequence[str]) -> None:
+    """Warn once that a source was skipped. Prints env var names, never values."""
+    names = _env_var_names(env_names if isinstance(env_names, str) else list(env_names))
+    if not names:
+        raise ValueError("required_env must be an environment variable name")
+    message = f"{source_name} skipped; required env {', '.join(names)}"
+    print(f"::warning title=MobilityRadar missing secret::{message}", flush=True)
+
+
+def _missing_secret_errors(
+    source: Source,
+    *,
+    raw_logger: RawLogger | None,
+) -> list[str] | None:
+    try:
+        missing_env = missing_required_env(source)
+    except ValueError:
+        return [f"{source.name}: required_env must be an environment variable name"]
+    if not missing_env:
+        return None
+    emit_missing_secret_warning(source.name, missing_env)
+    if raw_logger is not None:
+        raw_logger.log_skip(source_name=source.name, required_env=missing_env)
+    return [f"{source.name}: skipped_missing_env {', '.join(missing_env)}"]
+
+
 def collect_sources(
     sources: list[Source],
     *,
     category: str,
     limit_per_source: int = 30,
-    timeout: int = 15,
+    timeout: int = RSS_TIMEOUT_SECONDS,
     min_interval_per_host: float = 0.5,
     max_workers: int | None = None,
     health_db_path: str | None = None,
+    raw_logger: RawLogger | None = None,
 ) -> tuple[list[Article], list[str]]:
-    """Fetch items from all configured sources, returning articles and errors."""
+    """Fetch items from all configured sources, returning articles and errors.
+
+    Failures return an empty article list for that source. This function never
+    invents sample or fake items.
+    """
+    sources = [source for source in sources if source.enabled]
     articles: list[Article] = []
     errors: list[str] = []
     manager = get_circuit_breaker_manager()
@@ -207,6 +284,9 @@ def collect_sources(
     js_sources = [s for s in sources if s.type.lower() in _js_types]
 
     def _collect_for_source(source: Source) -> tuple[list[Article], list[str]]:
+        secret_errors = _missing_secret_errors(source, raw_logger=raw_logger)
+        if secret_errors is not None:
+            return [], secret_errors
         if health_store.is_disabled(source.name):
             return [], [f"{source.name}: Source disabled (crawl health threshold reached)"]
 
@@ -279,7 +359,15 @@ def _collect_single(
     timeout: int,
     session: requests.Session | None = None,
 ) -> list[Article]:
-    if source.type.lower() != "rss":
+    source_type = source.type.lower()
+    if source_type in {"citybikes", "citybike"}:
+        try:
+            return collect_citybikes(source, category=category, limit=limit, timeout=timeout)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            raise NetworkError(f"Network error fetching {source.name}: {exc}") from exc
+        except requests.exceptions.RequestException as exc:
+            raise SourceError(source.name, f"Request failed: {exc}", exc) from exc
+    if source_type != "rss":
         raise SourceError(source.name, f"Unsupported source type '{source.type}'")
 
     try:
@@ -297,6 +385,7 @@ def _collect_single(
     try:
         feed = feedparser.parse(response.content)
         items: list[Article] = []
+        dropped_challenge = 0
 
         for entry in feed.entries[:limit]:
             published = _extract_datetime(entry)
@@ -324,18 +413,31 @@ def _collect_single(
                 )
                 continue
 
+            summary = html.unescape(summary.strip())
+            if is_challenge_or_error_page(title, summary):
+                dropped_challenge += 1
+                continue
+
             items.append(
                 Article(
                     title=title,
                     link=link,
-                    summary=html.unescape(summary.strip()),
+                    summary=summary,
                     published=published,
                     source=source.name,
                     category=category,
                 )
             )
 
+        if items:
+            return items
+        if dropped_challenge:
+            raise ParseError(
+                f"Feed from {source.name} was a challenge, Cloudflare, or cookie-wall page"
+            )
         return items
+    except ParseError:
+        raise
     except Exception as exc:
         raise ParseError(f"Failed to parse feed from {source.name}: {exc}") from exc
 

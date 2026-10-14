@@ -1,1 +1,2 @@
-data/daily/*.duckdb filter=lfs diff=lfs merge=lfs -text
+# Daily DuckDB snapshots are regular Git blobs.
+# Git LFS is not used for new snapshots. Existing history is not rewritten.

@@ -33,15 +33,28 @@ CityBikes API와 모빌리티 관련 뉴스를 수집하여 공유 모빌리티 
    # 리포트: reports/mobility_report.html
    ```
 
-   주요 옵션: `--per-source-limit 20`, `--recent-days 5`, `--keep-days 60`, `--timeout 20`.
+   주요 옵션: `--per-source-limit 20`, `--recent-days 5`, `--keep-days 60`, `--timeout 45`.
+
+## 운영 계약
+
+1. **radar-core 핀.** `requirements.txt`와 `pyproject.toml`은 `radar-core @ git+https://github.com/ai-frendly-datahub/radar-core.git@main` (0.4.1) 입니다.
+2. **스냅샷 전에 압축.** `apply_date_storage_policy()`와 `RadarStorage.create_daily_snapshot()`은 일일 복사와 git add 전에 `radar_core.db_compact.compact_duckdb_file`를 호출합니다. 압축이 실패해도 기존 파일을 스냅샷합니다. 기본 예산은 90MiB입니다. `data/daily/*.duckdb`는 Git LFS로 올리지 않습니다. 히스토리는 다시 쓰지 않습니다.
+3. **피드 클라이언트.** User-Agent는 `MobilityRadar/0.1`입니다. RSS 타임아웃 기본값은 45초입니다. TLS 검증은 항상 켭니다. Cloudflare, "Just a moment", 쿠키 월, 403/404 제목은 저장하기 전에 버립니다. Cloudflare 우회는 없습니다.
+4. **없는 시크릿.** 소스마다 GitHub `::warning`을 한 번 출력합니다. `data/raw/<날짜>/<소스>.skip.json`에는 환경 변수 이름만 기록합니다.
+5. **실패해야 하는 실행.** 활성 소스 수집이 0건이면 종료 코드 1입니다. 출력이 0바이트이거나 DuckDB가 100MiB 이상이면 워크플로가 실패합니다. 데이터 푸시에는 `continue-on-error`가 없습니다.
+6. **Pages는 푸시 성공 후에만.** `gh-pages` 배포는 auto-commit 단계의 `outcome == success`일 때만 실행됩니다.
+7. **테스트.** 날짜 단정은 `tests/reference_dates.py` (2026-03-13 12:00 UTC)를 사용합니다. 커버리지는 `relative_files`입니다.
+
+시크릿 값은 코드, YAML, 로그, skip 파일에 넣지 않습니다.
 
 ## GitHub Actions & GitHub Pages
 
 - 워크플로: `.github/workflows/radar-crawler.yml`
-  - 스케줄: 매일 00:00 UTC (KST 09:00), 수동 실행도 지원.
+  - 스케줄: 매일 05:00 UTC (KST 14:00), 수동 실행도 지원.
   - 환경 변수 `RADAR_CATEGORY` 값은 `mobility`입니다.
-  - 리포트 배포 디렉터리: `reports` → `gh-pages` 브랜치로 배포.
-  - DuckDB 경로: `data/radar_data.duckdb` (Pages에 올라가지 않음). 아티팩트로 7일 보관.
+  - 수집 타임아웃은 45초입니다.
+  - 리포트 배포 디렉터리: `reports` → `gh-pages` 브랜치. 데이터 푸시가 성공한 뒤에만 배포합니다.
+  - DuckDB 경로: `data/radar_data.duckdb` (Pages에 올라가지 않음). 커밋 전 90MiB 예산으로 압축하고, 100MiB 이상이면 작업을 실패시킵니다. 아티팩트로 30일 보관.
 
 - 설정 방법:
   1) 저장소 Settings → Pages에서 `gh-pages` 브랜치를 선택해 활성화

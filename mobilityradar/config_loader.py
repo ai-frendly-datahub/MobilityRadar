@@ -108,6 +108,26 @@ def load_category_config(category_name: str, categories_dir: Path | None = None)
     )
 
 
+def _bool_value(raw: dict[str, object], key: str, default: bool) -> bool:
+    value = raw.get(key, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+def _dict_value(raw: dict[str, object], key: str) -> dict[str, object]:
+    value = raw.get(key)
+    if isinstance(value, dict):
+        return cast(dict[str, object], value)
+    return {}
+
+
 def _parse_source(entry: dict[str, object]) -> Source:
     if not entry:
         raise ValueError("Empty source entry in category config")
@@ -115,6 +135,9 @@ def _parse_source(entry: dict[str, object]) -> Source:
         name=_string_value(entry, "name", "Unnamed Source"),
         type=_string_value(entry, "type", "rss"),
         url=_string_value(entry, "url", ""),
+        id=_string_value(entry, "id", ""),
+        enabled=_bool_value(entry, "enabled", True),
+        config=_dict_value(entry, "config"),
     )
 
 

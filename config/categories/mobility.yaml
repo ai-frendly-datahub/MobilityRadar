@@ -89,29 +89,26 @@ sources:
     type: "rss"
     url: "https://cities-today.com/feed/"
 
-  - name: "Mobility Payments"
-    type: "rss"
-    url: "https://www.mobilitypayments.com/rss/"
-
   # === 국내 모빌리티 ===
   - name: "전자신문 모빌리티"
     type: "rss"
-    url: "https://www.etnews.com/rss/car.xml"
+    url: "https://rss.etnews.com/17.xml"
 
-  - name: "조선비즈 자동차"
+  - name: "Automotive World"
     type: "rss"
-    url: "https://biz.chosun.com/rss/car.xml"
+    url: "https://www.automotiveworld.com/feed/"
 
-  - name: "한경 자동차"
+  - name: "Just Auto"
     type: "rss"
-    url: "https://www.hankyung.com/feed/auto"
+    url: "https://www.just-auto.com/feed/"
 
-  # === 공공 데이터 (Playwright) ===
-  - name: "서울 따릉이"
-    type: "javascript"
-    url: "https://www.ddareungi.seoul.kr/station"
+  # === 공공 데이터 ===
+  - name: "CityBikes Seoul"
+    type: "citybikes"
+    url: "https://api.citybik.es/v2/networks/seoul-bike"
     config:
-      wait_for: ".station_list"
+      focus_cities:
+        - Seoul
 
   - name: "서울 교통정보"
     type: "javascript"
@@ -157,28 +154,32 @@ sources:
   # === EV/모빌리티 팟캐스트 ===
   - name: "Fully Charged Show"
     type: "rss"
-    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCzz4CoEgSgWNs9ZSb8Xt1WA"
+    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCzz4CoEgSgWNs9ZAvRMhW2A"
 
   - name: "Out of Spec Reviews"
     type: "rss"
-    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVIeSzghPOFQro8vzrrDvIA"
+    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCVRZKu68-4tQIk7_3CJ_wKA"
 
   - name: "Transport Evolved"
     type: "rss"
     url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC3HjB3X8jeENm46HCkI0Inw"
 
   # === 국제 모빌리티 뉴스 ===
-  - name: "The Mobility House"
+  - name: "electrive"
     type: "rss"
-    url: "https://www.mobilityhouse.com/int_en/magazine/feed/"
+    url: "https://www.electrive.com/feed/"
 
-  - name: "Transport & Environment"
+  - name: "POLIS Network"
     type: "rss"
-    url: "https://www.transportenvironment.org/feed/"
+    url: "https://www.polisnetwork.eu/feed/"
 
-  - name: "Automotive News Europe"
+  - name: "Automotive News"
     type: "rss"
-    url: "https://europe.autonews.com/rss.xml"
+    url: "https://www.autonews.com/arc/outboundfeeds/rss/?outputType=xml"
+
+  - name: "Payments Cards and Mobile"
+    type: "rss"
+    url: "https://www.paymentscardsandmobile.com/feed/"
 
 entities:
   - name: "VehicleType"
