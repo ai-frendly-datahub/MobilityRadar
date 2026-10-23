@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-23",
+  "category": "mobility",
+  "article_count": 114,
+  "source_count": 13,
+  "matched_count": 114,
+  "top_entities": [
+    {
+      "name": "Manufacturer",
+      "count": 85
+    },
+    {
+      "name": "VehicleType",
+      "count": 72
+    },
+    {
+      "name": "EVModel",
+      "count": 55
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 20
+    },
+    {
+      "name": "Regulation",
+      "count": 10
+    },
+    {
+      "name": "Service",
+      "count": 9
+    }
+  ],
+  "sources": {
+    "환경부 전기차 충전소": 1,
+    "r/electricvehicles": 19,
+    "Automotive World": 8,
+    "The Driven": 1,
+    "전자신문 모빌리티": 25,
+    "Electrek": 27,
+    "Out of Spec Reviews": 1,
+    "Automotive News": 13,
+    "Charged EVs": 3,
+    "Fully Charged Show": 1,
+    "electrive": 8,
+    "Just Auto": 1,
+    "InsideEVs": 6
+  },
+  "generated_at": "2026-10-23T18:40:26.517718+09:00"
+}
