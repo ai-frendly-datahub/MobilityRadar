@@ -5,7 +5,19 @@ import shutil
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+from radar_core.dates import daily_partition_date
+
 logger = logging.getLogger(__name__)
+
+
+def _collection_partition_date() -> date:
+    """Asia/Seoul calendar date of the collection instant.
+
+    Naive ``datetime.now()`` is not used. The instant is UTC, then converted
+    to the KST calendar date that names ``data/raw``, ``data/daily``, and
+    dated reports.
+    """
+    return daily_partition_date(datetime.now(UTC))
 
 
 def snapshot_database(
@@ -18,7 +30,7 @@ def snapshot_database(
         return None
 
     if snapshot_date is None:
-        snapshot_date = datetime.now(UTC).date()
+        snapshot_date = _collection_partition_date()
 
     if snapshot_root is None:
         snapshot_root = db_path.parent / "daily"
@@ -32,7 +44,7 @@ def snapshot_database(
 
 def cleanup_date_directories(base_dir: Path, *, keep_days: int, today: date | None = None) -> int:
     if today is None:
-        today = datetime.now(UTC).date()
+        today = _collection_partition_date()
 
     cutoff = today - timedelta(days=keep_days)
     removed = 0
@@ -60,7 +72,7 @@ def cleanup_date_directories(base_dir: Path, *, keep_days: int, today: date | No
 
 def cleanup_dated_reports(report_dir: Path, *, keep_days: int, today: date | None = None) -> int:
     if today is None:
-        today = datetime.now(UTC).date()
+        today = _collection_partition_date()
 
     cutoff = today - timedelta(days=keep_days)
     removed = 0
@@ -85,7 +97,7 @@ def cleanup_dated_reports(report_dir: Path, *, keep_days: int, today: date | Non
 def cleanup_daily_snapshots(daily_dir: Path, *, keep_days: int, today: date | None = None) -> int:
     if keep_days < 0 or not daily_dir.exists():
         return 0
-    cutoff = (today or datetime.now(UTC).date()) - timedelta(days=keep_days)
+    cutoff = (today or _collection_partition_date()) - timedelta(days=keep_days)
     removed = 0
     for item in daily_dir.iterdir():
         if not item.is_file() or not item.name.endswith(".duckdb"):

@@ -85,6 +85,7 @@ def collect_browser_sources(
                 published=article.published,
                 source=article.source,
                 category=article.category or category,
+                published_raw=getattr(article, "published_raw", None),
             )
         )
 

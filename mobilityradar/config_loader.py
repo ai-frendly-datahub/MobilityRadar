@@ -138,6 +138,7 @@ def _parse_source(entry: dict[str, object]) -> Source:
         id=_string_value(entry, "id", ""),
         enabled=_bool_value(entry, "enabled", True),
         config=_dict_value(entry, "config"),
+        default_timezone=_string_value(entry, "default_timezone", ""),
     )
 
 
