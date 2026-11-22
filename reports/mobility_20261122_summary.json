@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-22",
+  "category": "mobility",
+  "article_count": 101,
+  "source_count": 12,
+  "matched_count": 101,
+  "top_entities": [
+    {
+      "name": "Manufacturer",
+      "count": 64
+    },
+    {
+      "name": "VehicleType",
+      "count": 58
+    },
+    {
+      "name": "EVModel",
+      "count": 38
+    },
+    {
+      "name": "ChargingInfra",
+      "count": 19
+    },
+    {
+      "name": "Regulation",
+      "count": 8
+    },
+    {
+      "name": "Service",
+      "count": 5
+    }
+  ],
+  "sources": {
+    "환경부 전기차 충전소": 1,
+    "Automotive News": 18,
+    "The Driven": 4,
+    "InsideEVs": 10,
+    "CleanTechnica": 9,
+    "Electrek": 25,
+    "electrive": 11,
+    "전자신문 모빌리티": 9,
+    "Charged EVs": 3,
+    "Automotive World": 7,
+    "Just Auto": 3,
+    "Payments Cards and Mobile": 1
+  },
+  "generated_at": "2026-11-22T13:05:46.758578+00:00"
+}
